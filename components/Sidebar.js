@@ -15,10 +15,8 @@ export default function Sidebar({ selectedDocId, onSelectDoc, onUploadSuccess })
         const file = e.target.files[0];
         if (!file) return;
 
-        if (file.type !== "application/pdf") {
-            setError("Please select a PDF file");
-            return;
-        }
+        // Simple extension check or let backend handle it
+        // allowed: .pdf, .docx, .txt, .csv, .xlsx, .xls
 
         try {
             setUploading(true);
@@ -57,13 +55,13 @@ export default function Sidebar({ selectedDocId, onSelectDoc, onUploadSuccess })
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
-                    <span className="flex-1">Upload PDF</span>
+                    <span className="flex-1">Upload Document</span>
                     {uploading && (
                         <div className="h-3 w-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                     )}
                     <input
                         type="file"
-                        accept=".pdf"
+                        accept=".pdf,.docx,.txt,.csv,.xlsx,.xls"
                         onChange={handleUpload}
                         className="hidden"
                         disabled={uploading}
