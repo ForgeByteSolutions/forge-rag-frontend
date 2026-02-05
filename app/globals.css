@@ -2,25 +2,121 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --foreground: #353740;
+  --sidebar-bg: #202123;
+  --sidebar-text: #ececf1;
+  --sidebar-hover: #2a2b32;
+  --sidebar-selected: #343541;
+  --chat-bg: #ffffff;
+  --message-user: #f7f7f8;
+  --message-ai: #ffffff;
+  --accent: #10a37f;
+  --border: #e5e5e5;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c5c5d2;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #acacbe;
+}
+
+@layer utilities {
+  @keyframes thinking-dot {
+
+    0%,
+    80%,
+    100% {
+      transform: scale(0);
+      opacity: 0.3;
+    }
+
+    40% {
+      transform: scale(1.0);
+      opacity: 1;
+    }
+  }
+
+  .thinking-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background-color: #10a37f;
+    border-radius: 50%;
+    animation: thinking-dot 1.4s infinite ease-in-out both;
+  }
+
+  .thinking-dot:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .thinking-dot:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+}
+
+/* React PDF Styles */
+.react-pdf__Page__textContent {
+  border: 1px solid transparent;
+}
+
+.react-pdf__Page__textContent mark {
+  background-color: #ffff00 !important;
+  color: inherit !important;
+  border-radius: 2px;
+  box-shadow: 0 0 4px #ffff00;
+  padding: 0 1px;
+}
+
+/* Annotation Layer Fixes */
+.react-pdf__Page__annotations.annotationLayer {
+  display: none;
+}
+
+/* Scrollbar for PDF container */
+.pdf-container {
+  overflow-y: auto !important;
+  height: 100%;
+}
+
+.pdf-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.pdf-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.pdf-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+.pdf-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
 }
