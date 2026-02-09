@@ -39,7 +39,7 @@ export default function ChatInput({ onSendMessage, loading, selectedDocName }) {
                             Prompting:
                         </span>
                         <span className="text-[10px] font-semibold text-[#10a37f]">
-                            {selectedDocName || "All Documents"}
+                            {selectedDocName || "Global Dashboard"}
                         </span>
                     </div>
 
