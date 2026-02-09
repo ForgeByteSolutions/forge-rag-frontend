@@ -11,6 +11,8 @@ export default function ChatBox({ selectedDocId, selectedDocName, onViewCitation
   const [historyLoading, setHistoryLoading] = useState(false);
   const scrollRef = useRef(null);
 
+  const [model, setModel] = useState("gpt-4o-mini");
+
   // Load chat history when doc changes
   useEffect(() => {
     async function loadHistory() {
@@ -60,6 +62,7 @@ export default function ChatBox({ selectedDocId, selectedDocName, onViewCitation
       await streamChat({
         question: content,
         doc_id: selectedDocId,
+        model: model, // Pass selected model
         onToken: (token) => {
           fullAnswer += token;
           setMessages((prev) =>
@@ -88,6 +91,18 @@ export default function ChatBox({ selectedDocId, selectedDocName, onViewCitation
       <div className="h-14 border-b border-black/10 flex items-center px-6 justify-between shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-base font-semibold">Forge RAG Chat</span>
+        </div>
+
+        {/* Model Selector */}
+        <div className="flex items-center gap-2">
+          <select
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-[#10a37f]"
+          >
+            <option value="gpt-4o-mini">GPT-4o Mini (Paid)</option>
+            <option value="meta-llama/Llama-3.3-70B-Instruct">Llama 3.3 70B (Free)</option>
+          </select>
         </div>
       </div>
 
