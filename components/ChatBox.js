@@ -100,8 +100,8 @@ export default function ChatBox({ selectedDocId, selectedDocName, onViewCitation
             onChange={(e) => setModel(e.target.value)}
             className="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-[#10a37f]"
           >
-            <option value="gpt-4o-mini">GPT-4o Mini (Paid)</option>
             <option value="meta-llama/Llama-3.3-70B-Instruct">Llama 3.3 70B (Free)</option>
+            <option value="gpt-4o-mini">GPT-4o Mini (Paid)</option>
           </select>
         </div>
       </div>

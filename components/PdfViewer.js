@@ -35,6 +35,50 @@ export default function PdfViewer({ citation, docId, docName, onClose }) {
 
     // Unified highlighting function with robust fuzzy matching
     const applyHighlight = () => {
+        // Clear previous image overlay if it exists
+        const existingOverlay = document.getElementById("pdf-image-highlight-overlay");
+        if (existingOverlay) {
+            existingOverlay.remove();
+        }
+
+        // Only highlight bounding box if it's explicitly a vision citation.
+        const isVisionCitation = ["vector_chart", "chart_table", "structured"].includes(citation?.source_type);
+        if (citation?.image_bbox && isVisionCitation) {
+            const pageElement = containerRef.current?.querySelector('.react-pdf__Page');
+            if (!pageElement) return false;
+
+            // PyMuPDF returns coordinates in raw PDF points (1/72 inch). 
+            // react-pdf scales these according to the `scale` prop.
+            // We need to render an absolute div relative to the `.react-pdf__Page`.
+            const { x0, y0, x1, y1 } = citation.image_bbox;
+
+            const overlay = document.createElement("div");
+            overlay.id = "pdf-image-highlight-overlay";
+            overlay.style.position = "absolute";
+            overlay.style.left = `${x0 * scale}px`;
+            overlay.style.top = `${y0 * scale}px`;
+            overlay.style.width = `${(x1 - x0) * scale}px`;
+            overlay.style.height = `${(y1 - y0) * scale}px`;
+
+            // Styling to match text highlight
+            overlay.style.backgroundColor = 'rgba(252, 211, 77, 0.4)';
+            overlay.style.border = '2px solid rgba(252, 211, 77, 0.8)';
+            overlay.style.borderRadius = '4px';
+            overlay.style.pointerEvents = 'none'; // let clicks pass through
+            overlay.style.zIndex = "10";
+
+            pageElement.appendChild(overlay);
+            overlay.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            return true;
+        }
+
+        if (!isVisionCitation && citation?.source_type !== "text") {
+            // It's some other non-text citation but has no valid box
+            // Just return true to stop retries, we can't highlight it.
+            return true;
+        }
+
         if (!citation?.snippet) return false;
 
         const textLayer = containerRef.current?.querySelector(
