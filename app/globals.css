@@ -14,6 +14,11 @@
   --border: #e5e5e5;
 }
 
+/* Scale the entire UI down slightly so it looks right at 100% zoom */
+html {
+  font-size: clamp(12.5px, 0.78vw + 6px, 16px);
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

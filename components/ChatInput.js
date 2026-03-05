@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 
-export default function ChatInput({ onSendMessage, loading, selectedDocName }) {
+export default function ChatInput({ onSendMessage, loading, selectedDocName, themed }) {
     const [text, setText] = useState("");
     const textareaRef = useRef(null);
 
@@ -29,16 +29,26 @@ export default function ChatInput({ onSendMessage, loading, selectedDocName }) {
     };
 
     return (
-        <div className="absolute bottom-0 left-0 w-full pt-6 pb-6 md:pb-10 px-4 bg-gradient-to-t from-white via-white to-white/0">
+        <div
+            className="absolute bottom-0 left-0 w-full pt-6 pb-6 md:pb-10 px-4"
+            style={{
+                background: themed
+                    ? "linear-gradient(to top, rgba(255,255,255,0.75) 70%, rgba(255,255,255,0))"
+                    : "linear-gradient(to top, #fff 70%, rgba(255,255,255,0))",
+            }}
+        >
             <div className="max-w-2xl mx-auto">
-                <div className="relative flex flex-col w-full py-3 flex-grow md:py-4 md:pl-4 relative border border-black/10 bg-white rounded-xl shadow-lg focus-within:ring-1 focus-within:ring-black/10 transition-all">
+                <div
+                    className="relative flex flex-col w-full py-3 flex-grow md:py-4 md:pl-4 relative border border-black/10 rounded-xl shadow-lg focus-within:ring-1 focus-within:ring-black/10 transition-all"
+                    style={{ background: themed ? "rgba(255,255,255,0.80)" : "#fff", backdropFilter: themed ? "blur(8px)" : "none" }}
+                >
 
                     {/* Active Target Indicator */}
                     <div className="absolute -top-6 left-0 flex items-center gap-1">
                         <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">
                             Prompting:
                         </span>
-                        <span className="text-[10px] font-semibold text-[#10a37f]">
+                        <span className="text-[10px] font-semibold text-[#12b8cd]">
                             {selectedDocName || "Global Dashboard"}
                         </span>
                     </div>
@@ -58,7 +68,7 @@ export default function ChatInput({ onSendMessage, loading, selectedDocName }) {
                         onClick={handleSubmit}
                         disabled={!text.trim() || loading}
                         className={`absolute bottom-2 right-2 p-2 rounded-md transition-colors ${text.trim() && !loading
-                            ? "bg-[#10a37f] text-white"
+                            ? "bg-[#12b8cd] text-white"
                             : "text-gray-300 bg-transparent"
                             }`}
                     >

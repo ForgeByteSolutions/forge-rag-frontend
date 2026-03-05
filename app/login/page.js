@@ -61,7 +61,7 @@ export default function AuthPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full border-2 border-gray-100 rounded-lg px-4 py-3 text-base focus:outline-none focus:border-[#10a37f] transition-colors placeholder:text-gray-400"
+              className="w-full border-2 border-gray-100 rounded-lg px-4 py-3 text-base focus:outline-none focus:border-[#12b8cd] transition-colors placeholder:text-gray-400"
               placeholder="Email address"
             />
           </div>
@@ -71,7 +71,7 @@ export default function AuthPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border-2 border-gray-100 rounded-lg px-4 py-3 text-base focus:outline-none focus:border-[#10a37f] transition-colors placeholder:text-gray-400"
+              className="w-full border-2 border-gray-100 rounded-lg px-4 py-3 text-base focus:outline-none focus:border-[#12b8cd] transition-colors placeholder:text-gray-400"
               placeholder="Password"
             />
           </div>
@@ -85,7 +85,7 @@ export default function AuthPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#10a37f] text-white py-3 rounded-lg text-base font-medium hover:bg-[#0e8c6d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2 shadow-sm"
+            className="w-full bg-[#12b8cd] text-white py-3 rounded-lg text-base font-medium hover:bg-[#0e8c6d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2 shadow-sm"
           >
             {loading
               ? "Please wait..."
@@ -101,7 +101,7 @@ export default function AuthPage() {
               Don’t have an account?{" "}
               <button
                 onClick={() => setMode("register")}
-                className="text-[#10a37f] font-medium hover:underline"
+                className="text-[#12b8cd] font-medium hover:underline"
               >
                 Sign up
               </button>
@@ -111,7 +111,7 @@ export default function AuthPage() {
               Already have an account?{" "}
               <button
                 onClick={() => setMode("login")}
-                className="text-[#10a37f] font-medium hover:underline"
+                className="text-[#12b8cd] font-medium hover:underline"
               >
                 Log in
               </button>

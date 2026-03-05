@@ -10,8 +10,8 @@ export default function DocumentList({ selectedDocId, onSelectDoc }) {
     useEffect(() => {
         async function fetchDocs() {
             try {
-                const data = await getDocuments();
-                setDocuments(data.documents);
+                const docs = await getDocuments();
+                setDocuments(docs || []);
             } catch (err) {
                 console.error("Failed to fetch documents:", err);
             } finally {

@@ -224,7 +224,7 @@ export default function PdfViewer({ citation, docId, docName, onClose }) {
                                 max={numPages || 1}
                                 value={pageNumber}
                                 onChange={(e) => setPageNumber(Number(e.target.value))}
-                                className="w-8 bg-transparent text-center text-[11px] font-bold focus:outline-none border-b border-transparent focus:border-[#10a37f]"
+                                className="w-8 bg-transparent text-center text-[11px] font-bold focus:outline-none border-b border-transparent focus:border-[#12b8cd]"
                             />
                             <span className="text-[10px] font-bold text-gray-300">/</span>
                             <span className="text-[10px] font-bold text-gray-400">{numPages || "..."}</span>
@@ -271,7 +271,7 @@ export default function PdfViewer({ citation, docId, docName, onClose }) {
                             loading={
                                 <div className="flex items-center justify-center p-40 bg-white min-w-[500px]">
                                     <div className="flex flex-col items-center gap-4">
-                                        <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-100 border-t-[#10a37f]"></div>
+                                        <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-100 border-t-[#12b8cd]"></div>
                                         <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Loading Document...</span>
                                     </div>
                                 </div>
