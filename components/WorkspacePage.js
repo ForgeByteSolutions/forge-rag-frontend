@@ -552,7 +552,9 @@ export default function WorkspacePage() {
                                                     cursor: "pointer", transition: "all .2s", marginRight: 8
                                                 }}
                                             >
-                                                <span style={{ fontSize: 13, filter: f.result?.doc_id && riskMap[f.result.doc_id] ? "brightness(0) invert(1)" : "none" }}>⚖️</span>
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: f.result?.doc_id && riskMap[f.result.doc_id] ? "brightness(0) invert(1)" : "none" }}>
+                                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                                </svg>
                                             </button>
                                             <div style={{ width: 20, height: 20, borderRadius: "50%", background: "linear-gradient(135deg,#12b8cd,#3bb978)", display: "flex", alignItems: "center", justifyContent: "center", animation: "wsp-check .4s ease", flexShrink: 0 }}>
                                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
@@ -612,7 +614,9 @@ export default function WorkspacePage() {
                                             marginLeft: "auto"
                                         }}
                                     >
-                                        <span style={{ fontSize: 13, filter: isAnalyzed ? "brightness(0) invert(1)" : "none" }}>⚖️</span>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: isAnalyzed ? "brightness(0) invert(1)" : "none" }}>
+                                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                        </svg>
                                     </button>
                                 </div>
                             );
@@ -644,8 +648,11 @@ export default function WorkspacePage() {
                                 border: "1.5px solid rgba(18,184,205,.3)",
                                 display: "flex", alignItems: "center", justifyContent: "center",
                                 animation: "wsp-float 3.5s ease-in-out infinite",
-                                fontSize: 36,
-                            }}>⚖️</div>
+                            }}>
+                                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#12b8cd" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                </svg>
+                            </div>
 
                             {/* Text */}
                             <div style={{ textAlign: "center" }}>
@@ -690,10 +697,14 @@ export default function WorkspacePage() {
                                     style={{
                                         padding: "12px 28px", borderRadius: 12, border: "none",
                                         background: "linear-gradient(135deg,#12b8cd,#3bb978)",
-                                        fontSize: 14, fontWeight: 700, color: "#fff", cursor: "pointer",
+                                        fontSize: 14, fontBold: 700, color: "#fff", cursor: "pointer",
                                         display: "flex", alignItems: "center", gap: 8,
                                         boxShadow: "0 4px 14px rgba(18,184,205,.35)",
-                                    }}>⚖️ Risk Analysis
+                                    }}>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                    </svg>
+                                    Risk Analysis
                                 </button>
                             </div>
                         </div>
@@ -733,7 +744,14 @@ export default function WorkspacePage() {
                                             boxShadow: rightTab === tab ? "0 1px 4px rgba(0,0,0,.1)" : "none",
                                             transition: "all .2s",
                                         }}>
-                                        {tab === "chat" ? "💬 Chat" : `⚖️ Risk Analysis (${contractDocs.length})`}
+                                        {tab === "chat" ? "💬 Chat" : (
+                                            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                                </svg>
+                                                Risk Analysis ({contractDocs.length})
+                                            </span>
+                                        )}
                                     </button>
                                 ))}
                             </div>
@@ -834,7 +852,7 @@ export default function WorkspacePage() {
                                                             <path d="M12 8v4l2 2" />
                                                         </svg>
                                                     </div>
-                                                    <div className="wsp-bubble-ai wsp-dm">
+                                                    <div className="wsp-bubble-ai wsp-dm" style={{ position: "relative" }}>
                                                         <ReactMarkdown
                                                             remarkPlugins={[remarkGfm]}
                                                             components={{
@@ -854,6 +872,51 @@ export default function WorkspacePage() {
                                                         >
                                                             {msg.content}
                                                         </ReactMarkdown>
+
+                                                        {/* Citations */}
+                                                        {msg.citations && msg.citations.length > 0 && (
+                                                            <div style={{
+                                                                marginTop: 14,
+                                                                paddingTop: 12,
+                                                                borderTop: "1px solid rgba(0,0,0,.05)",
+                                                                display: "flex",
+                                                                flexWrap: "wrap",
+                                                                gap: 8
+                                                            }}>
+                                                                {msg.citations.map((cite, idx) => (
+                                                                    <div
+                                                                        key={idx}
+                                                                        title={cite.snippet}
+                                                                        style={{
+                                                                            padding: "4px 10px",
+                                                                            background: "#f8fafc",
+                                                                            border: "1px solid #e2e8f0",
+                                                                            borderRadius: 6,
+                                                                            fontSize: 11,
+                                                                            fontWeight: 600,
+                                                                            color: "#64748b",
+                                                                            display: "flex",
+                                                                            alignItems: "center",
+                                                                            gap: 6,
+                                                                            cursor: "help",
+                                                                            transition: "all .2s"
+                                                                        }}
+                                                                        onMouseEnter={(e) => {
+                                                                            e.currentTarget.style.borderColor = "#12b8cd";
+                                                                            e.currentTarget.style.background = "#fff";
+                                                                        }}
+                                                                        onMouseLeave={(e) => {
+                                                                            e.currentTarget.style.borderColor = "#e2e8f0";
+                                                                            e.currentTarget.style.background = "#f8fafc";
+                                                                        }}
+                                                                    >
+                                                                        <span style={{ fontSize: 13 }}>📄</span>
+                                                                        <span>{cite.source} (p.{cite.page})</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
                                                         {msg.streaming && (
                                                             <span style={{ display: "inline-block", width: 8, height: 16, background: "#12b8cd", borderRadius: 2, marginLeft: 2, animation: "wsp-pulse 1s infinite", verticalAlign: "middle" }} />
                                                         )}

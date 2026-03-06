@@ -82,7 +82,7 @@ export default function ChatInput({ onSendMessage, loading, selectedDocName, the
                     </button>
                 </div>
                 <p className="text-[10px] text-gray-400 text-center mt-2 px-4 italic">
-                    Forge RAG can make mistakes. Verify important info.
+                    FORGE INTELLI OCR can make mistakes. Verify important info.
                 </p>
             </div>
         </div>

@@ -108,13 +108,13 @@ const THEME_STYLES = `
   }
 `;
 
-export default function ChatBox({ selectedDocId, selectedDocName, onViewCitation, onSwitchToRisk }) {
+export default function ChatBox({ selectedDocId, selectedDocName, onViewCitation, onSwitchToRisk, isCitationActive }) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const scrollRef = useRef(null);
 
-  const [model, setModel] = useState("gpt-4o-mini");
+  const [model, setModel] = useState("meta-llama/Llama-3.3-70B-Instruct");
 
   // ── Theme state ──
   const [activeTheme, setActiveTheme] = useState(null); // image URL or null
@@ -225,7 +225,7 @@ export default function ChatBox({ selectedDocId, selectedDocName, onViewCitation
           borderBottom: "1px solid rgba(0,0,0,.08)",
           display: "flex", alignItems: "center",
           justifyContent: "space-between",
-          padding: "0 20px 0 62px",
+          padding: isCitationActive ? "0 20px" : "0 20px 0 62px",
           flexShrink: 0,
           background: activeTheme ? "rgba(255,255,255,0.75)" : "#fff",
           backdropFilter: activeTheme ? "blur(1px)" : "none",
@@ -234,30 +234,39 @@ export default function ChatBox({ selectedDocId, selectedDocName, onViewCitation
         }}>
           {/* Left: title + doc name */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-              background: "linear-gradient(135deg,#12b8cd,#3bb978)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-              </svg>
-            </div>
+            {!isCitationActive && (
+              <div style={{
+                width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+                background: "linear-gradient(135deg,#12b8cd,#3bb978)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                </svg>
+              </div>
+            )}
             <div style={{ minWidth: 0 }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", margin: 0, lineHeight: 1.2 }}>
-                Forge RAG Chat
-              </p>
+              {!isCitationActive && (
+                <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", margin: 0, lineHeight: 1.2 }}>
+                  FORGE INTELLI OCR
+                </p>
+              )}
               {selectedDocName && (
                 <p style={{
-                  fontSize: 11, color: "#94a3b8", margin: 0,
+                  fontSize: isCitationActive ? 13 : 11,
+                  fontWeight: isCitationActive ? 700 : 400,
+                  color: isCitationActive ? "#0f172a" : "#94a3b8",
+                  margin: 0,
                   overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                  maxWidth: 220,
+                  maxWidth: isCitationActive ? 400 : 220,
                 }}>
+                  {isCitationActive && "📖 "}
                   {selectedDocName}
                 </p>
               )}
             </div>
           </div>
+
 
           {/* Right: controls */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
@@ -361,7 +370,7 @@ export default function ChatBox({ selectedDocId, selectedDocName, onViewCitation
             </div>
           ) : messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center px-6 pt-20">
-              <h1 className="text-4xl font-bold text-gray-200 mb-8">Forge RAG</h1>
+              <h1 className="text-4xl font-bold text-gray-200 mb-8">FORGE INTELLI OCR</h1>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-xl">
                 <div className="p-4 border border-black/10 rounded-xl hover:bg-gray-50 transition-colors cursor-default text-left">
                   <span className="text-sm font-medium block mb-1">Upload Documents</span>

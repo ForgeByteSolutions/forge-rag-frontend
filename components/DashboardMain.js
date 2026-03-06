@@ -270,7 +270,7 @@ function DashboardHome({ onUpload, uploading, sidebarOpen, onCreateWorkspace, cr
                 <div>
                     <h1 className="dh-syne dh-shimmer-text font-bold tracking-tight leading-none"
                         style={{ fontSize: 'clamp(22px, 3vw, 28px)' }}>
-                        FORGE RAG
+                        FORGE INTELLI OCR
                     </h1>
                     <p className="dh-dm text-[9px] font-medium text-gray-500 tracking-[.2em] uppercase mt-1">
                         Retrieval Augmented Generation
@@ -428,8 +428,7 @@ export default function DashboardMain() {
     const [uploading, setUploading] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [creatingWorkspace, setCreatingWorkspace] = useState(false);
-    // contractModal: null | { doc_id: string, filename: string }
-    const [contractModal, setContractModal] = useState(null);
+
     // Risk analysis
     const [riskData, setRiskData] = useState(null);
     const [riskLoading, setRiskLoading] = useState(false);
@@ -491,6 +490,7 @@ export default function DashboardMain() {
             setUploading(true);
             const formData = new FormData();
             formData.append("file", file);
+            formData.append("workspace_id", "none"); // standalone upload, not in a workspace
             const response = await fetch(
                 `${process.env.NEXT_PUBLIC_API_BASE}/documents/upload`,
                 { method: "POST", headers: { Authorization: `Bearer ${await getToken()}` }, body: formData }
@@ -502,8 +502,8 @@ export default function DashboardMain() {
             setRefreshSidebar(prev => prev + 1);
 
             if (data.is_contract) {
-                // Contract detected → let user choose Chat or Risk Analysis
-                setContractModal({ doc_id: newDocId, filename: data.filename || file.name });
+                // Contract detected → go to decision screen
+                router.push(`/dashboard/${newDocId}?tab=choice`);
             } else {
                 // Not a contract → go directly to chat
                 router.push(`/dashboard/${newDocId}`);
@@ -537,69 +537,6 @@ export default function DashboardMain() {
         <div className={`${syne.variable} ${dmSans.variable} flex h-screen w-screen overflow-hidden bg-white relative`}>
             <style>{STYLES}</style>
 
-            {/* ── Contract Upload Modal ── */}
-            {contractModal && (
-                <div className="dh-overlay" style={{ zIndex: 200 }}>
-                    <div className="dh-modal" style={{ maxWidth: 460 }}>
-                        {/* Icon + heading */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
-                            <div style={{
-                                width: 48, height: 48, borderRadius: 14, flexShrink: 0,
-                                background: 'linear-gradient(135deg, rgba(18,184,205,.15), rgba(18,184,205,.28))',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24
-                            }}>
-                                ⚖️
-                            </div>
-                            <div>
-                                <h3 className="dh-syne" style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>
-                                    Contract Detected
-                                </h3>
-                                <p className="dh-dm" style={{ fontSize: 12, color: '#6b7280', marginTop: 3 }}>
-                                    {contractModal.filename}
-                                </p>
-                            </div>
-                        </div>
-
-                        <p className="dh-dm" style={{ fontSize: 13, color: '#374151', marginBottom: 22, lineHeight: 1.6 }}>
-                            This document looks like a contract. What would you like to do?
-                        </p>
-
-                        {/* Option buttons */}
-                        <div style={{ display: 'flex', gap: 12 }}>
-                            {/* Chat */}
-                            <button
-                                className="dh-btn-workspace"
-                                style={{ flex: 1, justifyContent: 'center', padding: '14px 12px' }}
-                                onClick={() => {
-                                    setContractModal(null);
-                                    router.push(`/dashboard/${contractModal.doc_id}`);
-                                }}
-                            >
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-                                </svg>
-                                Chat
-                            </button>
-
-                            {/* Risk Analysis */}
-                            <button
-                                className="dh-btn"
-                                style={{ flex: 1, justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 8 }}
-                                onClick={() => {
-                                    const docId = contractModal.doc_id;
-                                    setContractModal(null);
-                                    router.push(`/dashboard/${docId}?tab=risk`);
-                                }}
-                            >
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                                </svg>
-                                Risk Analysis
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* ── Toggle button — floats over everything, moves with sidebar ── */}
             <button
@@ -653,7 +590,7 @@ export default function DashboardMain() {
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                             <rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" />
                         </svg>
-                        Billing
+                        AI GOVERNANCE
                     </button>
                 )}
                 {/* Document viewer panel */}
@@ -691,13 +628,73 @@ export default function DashboardMain() {
                 {/* Chat or risk or upload */}
                 <main className="h-full flex flex-col min-w-0 overflow-hidden flex-1">
                     {selectedDoc ? (
-                        searchParams?.get("tab") === "risk" ? (
+                        searchParams?.get("tab") === "choice" ? (
+                            <div className="flex-1 flex flex-col items-center justify-center dh-bg dh-dm px-6">
+                                <style>{STYLES}</style>
+                                <div className="dh-card w-full max-w-md p-8 dh-fade-1">
+                                    {/* Icon + heading */}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
+                                        <div style={{
+                                            width: 56, height: 56, borderRadius: 16, flexShrink: 0,
+                                            background: 'linear-gradient(135deg, rgba(18,184,205,.15), rgba(18,184,205,.28))',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}>
+                                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#12b8cd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="dh-syne" style={{ fontSize: 22, fontWeight: 700, color: '#111827' }}>
+                                                Contract Detected
+                                            </h3>
+                                            <p className="dh-dm" style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>
+                                                {selectedDoc.filename}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <p className="dh-dm" style={{ fontSize: 15, color: '#4b5563', marginBottom: 32, lineHeight: 1.6 }}>
+                                        This document has been identified as a legal contract. What would you like to do?
+                                    </p>
+
+                                    {/* Option buttons */}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                                        {/* Risk Analysis — Primary Action */}
+                                        <button
+                                            className="dh-btn"
+                                            style={{ justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 10, padding: '16px' }}
+                                            onClick={() => router.push(`/dashboard/${selectedDoc.id}?tab=risk`)}
+                                        >
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                            </svg>
+                                            Perform Risk Analysis
+                                        </button>
+
+                                        {/* Chat */}
+                                        <button
+                                            className="dh-btn-workspace"
+                                            style={{ justifyContent: 'center', padding: '16px' }}
+                                            onClick={() => router.push(`/dashboard/${selectedDoc.id}`)}
+                                        >
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                                            </svg>
+                                            Open in Chatbox
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : searchParams?.get("tab") === "risk" ? (
+
                             // Risk Analysis view
                             <div className="h-full flex flex-col overflow-hidden">
                                 {/* Header */}
                                 <div className="h-14 border-b border-black/10 flex items-center justify-between px-6 shrink-0">
                                     <div className="flex items-center gap-3">
-                                        <span style={{ fontSize: 20 }}>⚖️</span>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#12b8cd" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                        </svg>
                                         <span className="text-base font-semibold text-gray-900">Risk Analysis</span>
                                         <span className="text-xs text-gray-400 truncate max-w-xs">{selectedDoc.filename}</span>
                                     </div>
@@ -726,6 +723,7 @@ export default function DashboardMain() {
                                 selectedDocName={selectedDoc?.filename || null}
                                 onViewCitation={handleViewCitation}
                                 onSwitchToRisk={() => router.push(`/dashboard/${selectedDoc.id}?tab=risk`)}
+                                isCitationActive={!!activeCitation}
                             />
                         )
                     ) : (
