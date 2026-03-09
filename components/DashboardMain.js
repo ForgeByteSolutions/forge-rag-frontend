@@ -15,6 +15,7 @@ const PdfViewer = dynamic(() => import("@/components/PdfViewer"), { ssr: false }
 const TextViewer = dynamic(() => import("@/components/TextViewer"), { ssr: false });
 const DocxViewer = dynamic(() => import("@/components/DocxViewer"), { ssr: false });
 const SpreadsheetViewer = dynamic(() => import("@/components/SpreadsheetViewer"), { ssr: false });
+const ImageViewer = dynamic(() => import("./ImageViewer"), { ssr: false });
 
 const syne = Syne({ subsets: ["latin"], weight: ["600", "700", "800"], display: "swap", variable: "--font-syne" });
 const dmSans = DM_Sans({ subsets: ["latin"], weight: ["300", "400", "500", "700"], display: "swap", variable: "--font-dm" });
@@ -326,11 +327,11 @@ function DashboardHome({ onUpload, uploading, sidebarOpen, onCreateWorkspace, cr
                         </div>
                         <div className="dh-btn">Choose File</div>
                         <div className="flex flex-wrap justify-center gap-2">
-                            {['PDF', 'DOCX', 'TXT', 'CSV', 'XLSX'].map(f => (
+                            {['PDF', 'DOCX', 'TXT', 'CSV', 'XLSX', 'JPG', 'PNG'].map(f => (
                                 <span key={f} className="dh-badge">{f}</span>
                             ))}
                         </div>
-                        <input type="file" accept=".pdf,.docx,.txt,.csv,.xlsx,.xls" className="hidden" onChange={onUpload} />
+                        <input type="file" accept=".pdf,.docx,.txt,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.gif,.webp" className="hidden" onChange={onUpload} />
                     </label>
                 )}
             </div>
@@ -429,9 +430,18 @@ export default function DashboardMain() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [creatingWorkspace, setCreatingWorkspace] = useState(false);
 
+    // OCR Engine Selection
+    const [pendingFile, setPendingFile] = useState(null);
+    const [selectedOcrEngine, setSelectedOcrEngine] = useState("tesseract");
+
     // Risk analysis
     const [riskData, setRiskData] = useState(null);
     const [riskLoading, setRiskLoading] = useState(false);
+
+    // Global Risk Dashboard
+    const [showRiskDashboard, setShowRiskDashboard] = useState(false);
+    const [allRisksData, setAllRisksData] = useState([]);
+    const [loadingAllRisks, setLoadingAllRisks] = useState(false);
 
     useEffect(() => {
         if (!isLoggedIn()) router.push("/login");
@@ -479,18 +489,13 @@ export default function DashboardMain() {
 
     const handleUploadSuccess = () => setRefreshSidebar(prev => prev + 1);
 
-    const handleFileUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const ext = file.name.split(".").pop().toLowerCase();
-        if (!["pdf", "docx", "txt", "csv", "xlsx", "xls"].includes(ext)) {
-            alert("❌ Invalid file type!"); return;
-        }
+    const executeUpload = async (file, ocrEngine) => {
         try {
             setUploading(true);
             const formData = new FormData();
             formData.append("file", file);
             formData.append("workspace_id", "none"); // standalone upload, not in a workspace
+            formData.append("ocr_engine", ocrEngine);
             const response = await fetch(
                 `${process.env.NEXT_PUBLIC_API_BASE}/documents/upload`,
                 { method: "POST", headers: { Authorization: `Bearer ${await getToken()}` }, body: formData }
@@ -513,7 +518,23 @@ export default function DashboardMain() {
             alert("❌ Upload failed.");
         } finally {
             setUploading(false);
-            e.target.value = "";
+        }
+    };
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const ext = file.name.split(".").pop().toLowerCase();
+        if (!["pdf", "docx", "txt", "csv", "xlsx", "xls", "png", "jpg", "jpeg", "gif", "webp"].includes(ext)) {
+            alert("❌ Invalid file type!"); return;
+        }
+
+        e.target.value = ""; // Clear input immediately
+        if (["pdf", "png", "jpg", "jpeg", "webp", "jfif"].includes(ext)) {
+            setPendingFile(file);
+            setSelectedOcrEngine("tesseract");
+        } else {
+            executeUpload(file, "tesseract");
         }
     };
 
@@ -530,6 +551,20 @@ export default function DashboardMain() {
             alert("❌ Failed to create workspace.");
         } finally {
             setCreatingWorkspace(false);
+        }
+    };
+
+    const handleOpenRiskDashboard = async () => {
+        try {
+            setShowRiskDashboard(true);
+            setLoadingAllRisks(true);
+            const { getAllRisks } = await import("@/lib/api");
+            const data = await getAllRisks();
+            setAllRisksData(data?.risks || []);
+        } catch (err) {
+            console.error("Failed to load risks:", err);
+        } finally {
+            setLoadingAllRisks(false);
         }
     };
 
@@ -565,33 +600,64 @@ export default function DashboardMain() {
             <div className="flex-1 flex overflow-hidden">
                 {/* Billing button — only on Dashboard home (no doc selected) */}
                 {!selectedDoc && (
-                    <button
-                        onClick={() => router.push("/usage")}
-                        style={{
-                            position: "fixed",
-                            top: 12, right: 16,
-                            zIndex: 60,
-                            display: "flex", alignItems: "center", gap: 6,
-                            padding: "7px 16px",
-                            background: "linear-gradient(135deg,#12b8cd,#3bb978)",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: 10,
-                            fontSize: 12,
-                            fontWeight: 700,
-                            letterSpacing: ".04em",
-                            cursor: "pointer",
-                            boxShadow: "0 2px 10px rgba(18,184,205,.35)",
-                            transition: "transform .15s, box-shadow .15s",
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 18px rgba(18,184,205,.4)"; }}
-                        onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 2px 10px rgba(18,184,205,.35)"; }}
-                    >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" />
-                        </svg>
-                        AI GOVERNANCE
-                    </button>
+                    <div style={{
+                        position: "fixed",
+                        top: 12, right: 16,
+                        zIndex: 60,
+                        display: "flex", alignItems: "center", gap: 8
+                    }}>
+                        <button
+                            onClick={handleOpenRiskDashboard}
+                            style={{
+                                display: "flex", alignItems: "center", gap: 6,
+                                padding: "7px 16px",
+                                background: "#fff",
+                                color: "#ef4444",
+                                border: "1.5px solid #fca5a5",
+                                borderRadius: 10,
+                                fontSize: 12,
+                                fontWeight: 700,
+                                letterSpacing: ".04em",
+                                cursor: "pointer",
+                                boxShadow: "0 2px 10px rgba(239,68,68,.1)",
+                                transition: "transform .15s, box-shadow .15s, background .15s",
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 18px rgba(239,68,68,.2)"; e.currentTarget.style.background = "#fef2f2"; }}
+                            onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 2px 10px rgba(239,68,68,.1)"; e.currentTarget.style.background = "#fff"; }}
+                        >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                <line x1="12" y1="8" x2="12" y2="12" />
+                                <line x1="12" y1="16" x2="12.01" y2="16" />
+                            </svg>
+                            YOUR RISKS
+                        </button>
+
+                        <button
+                            onClick={() => router.push("/usage")}
+                            style={{
+                                display: "flex", alignItems: "center", gap: 6,
+                                padding: "7px 16px",
+                                background: "linear-gradient(135deg,#12b8cd,#3bb978)",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: 10,
+                                fontSize: 12,
+                                fontWeight: 700,
+                                letterSpacing: ".04em",
+                                cursor: "pointer",
+                                boxShadow: "0 2px 10px rgba(18,184,205,.35)",
+                                transition: "transform .15s, box-shadow .15s",
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 18px rgba(18,184,205,.4)"; }}
+                            onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 2px 10px rgba(18,184,205,.35)"; }}
+                        >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" />
+                            </svg>
+                            AI GOVERNANCE
+                        </button>
+                    </div>
                 )}
                 {/* Document viewer panel */}
                 <div className={`h-full border-r border-black/5 bg-gray-50 transition-all duration-300 ease-in-out overflow-hidden ${activeCitation ? "flex-[1.2] opacity-100" : "flex-0 w-0 opacity-0 invisible"
@@ -604,6 +670,9 @@ export default function DashboardMain() {
                             return <DocxViewer citation={activeCitation} docId={activeCitation.doc_id} docName={activeCitation.source} onClose={handleClosePdf} />;
                         if (lowerName.endsWith(".csv") || lowerName.endsWith(".xlsx") || lowerName.endsWith(".xls"))
                             return <SpreadsheetViewer citation={activeCitation} docId={activeCitation.doc_id} docName={activeCitation.source} onClose={handleClosePdf} />;
+                        const imageExts = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"];
+                        if (imageExts.some(ext => lowerName.endsWith(ext)))
+                            return <ImageViewer citation={activeCitation} docId={activeCitation.doc_id} docName={activeCitation.source} onClose={handleClosePdf} />;
                         const textExts = [".txt", ".md", ".json", ".xml", ".py", ".js", ".ts", ".jsx", ".tsx", ".css", ".html", ".log"];
                         if (textExts.some(ext => lowerName.endsWith(ext)))
                             return <TextViewer citation={activeCitation} docId={activeCitation.doc_id} docName={activeCitation.source} onClose={handleClosePdf} />;
@@ -737,6 +806,241 @@ export default function DashboardMain() {
                     )}
                 </main>
             </div>
+
+            {/* Risk Dashboard Modal */}
+            {showRiskDashboard && (
+                <div className="dh-overlay" onClick={() => setShowRiskDashboard(false)} style={{ zIndex: 9999 }}>
+                    <div
+                        className="dh-modal"
+                        onClick={e => e.stopPropagation()}
+                        style={{ maxWidth: '800px', width: '90%', maxHeight: '85vh', display: 'flex', flexDirection: 'column', padding: '0' }}
+                    >
+                        {/* Header */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 32px', borderBottom: '1px solid rgba(0,0,0,.05)', background: '#fff', borderRadius: '24px 24px 0 0' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                <div style={{
+                                    width: 48, height: 48, borderRadius: 14,
+                                    background: 'linear-gradient(135deg, rgba(239,68,68,.1), rgba(220,38,38,.2))',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                }}>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                        <line x1="12" y1="8" x2="12" y2="12" />
+                                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                                    </svg>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <h2 style={{ fontFamily: 'Calibri, "Segoe UI", sans-serif', fontSize: 22, fontWeight: 700, color: '#111827', margin: 0 }}>Your Risks Panel</h2>
+                                    <p style={{ fontFamily: 'Calibri, "Segoe UI", sans-serif', fontSize: 14, color: '#6b7280', marginTop: 2 }}>Overview of all automated legal & compliance risk analyses</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowRiskDashboard(false)}
+                                style={{
+                                    background: 'rgba(0,0,0,.04)', border: 'none', width: 36, height: 36, borderRadius: '50%',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'background .2s'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,.08)'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,.04)'}
+                            >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M18 6L6 18M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Body */}
+                        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '24px', background: '#f8fafc', borderRadius: '0 0 24px 24px' }}>
+                            {loadingAllRisks ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: 16 }}>
+                                    <div className="dh-spin-anim" style={{ width: 32, height: 32, border: '3px solid #fca5a5', borderTopColor: '#ef4444', borderRadius: '50%' }}></div>
+                                    <p className="dh-dm" style={{ color: '#9ca3af', fontSize: 14 }}>Aggregating risk profiles...</p>
+                                </div>
+                            ) : allRisksData.length === 0 ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 0', gap: 16 }}>
+                                    <div style={{
+                                        width: 64, height: 64, borderRadius: '50%', background: '#fff', border: '1px solid rgba(0,0,0,.04)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 30px rgba(0,0,0,.03)'
+                                    }}>
+                                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                        </svg>
+                                    </div>
+                                    <div style={{ textAlign: 'center' }}>
+                                        <p className="dh-syne" style={{ color: '#4b5563', fontSize: 18, fontWeight: 700, letterSpacing: '.02em' }}>No Risks Detected</p>
+                                        <p className="dh-dm" style={{ color: '#9ca3af', fontSize: 13, marginTop: 4 }}>You have no high or low risks listed in this workspace.</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                    {allRisksData.map((risk, index) => {
+                                        const level = (risk.risk_level || "Low").toLowerCase();
+                                        let color = '#10b981', bg = '#f0fdf4', label = 'Low Risk';
+                                        if (level === 'high') {
+                                            color = '#f43f5e'; bg = '#fff1f2'; label = 'High Risk';
+                                        } else if (level === 'medium') {
+                                            color = '#f59e0b'; bg = '#fffbeb'; label = 'Medium Risk';
+                                        }
+
+                                        return (
+                                            <div key={`${risk.doc_id}-${index}`} className="dh-fade-1" style={{
+                                                background: '#fff',
+                                                border: '1px solid rgba(0,0,0,.04)',
+                                                borderRadius: 20,
+                                                padding: '20px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                flexWrap: 'wrap',
+                                                gap: '16px 20px',
+                                                boxShadow: '0 4px 12px rgba(0,0,0,.01)',
+                                                animationDelay: `${index * 0.05}s`,
+                                                transition: 'all 0.3s cubic-bezier(.165, .84, .44, 1)',
+                                                cursor: 'default',
+                                                overflow: 'hidden'
+                                            }}
+                                                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,.05)'; e.currentTarget.style.borderColor = color + '33'; }}
+                                                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.01)'; e.currentTarget.style.borderColor = 'rgba(0,0,0,.04)'; }}
+                                            >
+                                                {/* Left: Score Box */}
+                                                <div style={{
+                                                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                                    width: 80, height: 80, borderRadius: 16, background: bg, border: `1px solid ${color}15`,
+                                                    flexShrink: 0
+                                                }}>
+                                                    <span style={{
+                                                        fontFamily: 'var(--font-syne)',
+                                                        fontSize: 30, fontWeight: 800, color: color, lineHeight: 1
+                                                    }}>
+                                                        {risk.risk_score}
+                                                    </span>
+                                                    <span style={{
+                                                        fontFamily: 'var(--font-dm)',
+                                                        fontSize: 9, fontWeight: 800, color: color, marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.05em'
+                                                    }}>
+                                                        {label}
+                                                    </span>
+                                                </div>
+
+                                                {/* Middle: Info */}
+                                                <div style={{ flex: '1 1 200px', minWidth: 0 }}>
+                                                    <h3 className="dh-syne" style={{ fontSize: 16, fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 4 }}>
+                                                        {risk.filename}
+                                                    </h3>
+                                                    <div className="dh-dm" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 14px', fontSize: 11, color: '#64748b' }}>
+                                                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.6 }}>
+                                                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                                                                <line x1="3" y1="10" x2="21" y2="10" />
+                                                            </svg>
+                                                            {new Date(risk.uploaded_at).toLocaleDateString()}
+                                                        </span>
+                                                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: color, fontWeight: 600 }}>
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                                <circle cx="12" cy="12" r="10" />
+                                                                <path d="M12 8v4" /><path d="M12 16h.01" />
+                                                            </svg>
+                                                            {risk.risk_level} Risk
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Right: Action */}
+                                                <button
+                                                    onClick={() => {
+                                                        setShowRiskDashboard(false);
+                                                        router.push(`/dashboard/${risk.doc_id}?tab=risk`);
+                                                    }}
+                                                    style={{
+                                                        background: '#1e293b', color: '#fff', border: 'none', borderRadius: 10,
+                                                        padding: '10px 20px', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.08em',
+                                                        cursor: 'pointer', transition: 'all 0.2s cubic-bezier(.4, 0, .2, 1)',
+                                                        boxShadow: '0 4px 12px rgba(0,0,0,.08)',
+                                                        marginLeft: 'auto'
+                                                    }}
+                                                    onMouseEnter={e => { e.currentTarget.style.background = '#0f172a'; e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,.15)'; }}
+                                                    onMouseLeave={e => { e.currentTarget.style.background = '#1e293b'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.08)'; }}
+                                                    className="dh-syne"
+                                                >
+                                                    Analysis
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── OCR Engine Modal ── */}
+            {pendingFile && (
+                <div className="dh-overlay" onClick={() => setPendingFile(null)} style={{ zIndex: 99999 }}>
+                    <div style={{
+                        background: "#fff", padding: "32px", borderRadius: "24px", width: "100%", maxWidth: "500px",
+                        boxShadow: "0 24px 80px rgba(0,0,0,0.2)", display: "flex", flexDirection: "column"
+                    }} onClick={e => e.stopPropagation()}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+                            <div style={{
+                                width: 48, height: 48, borderRadius: 12, background: "linear-gradient(135deg,rgba(18,184,205,.15),rgba(18,184,205,.30))",
+                                display: "flex", alignItems: "center", justifyContent: "center"
+                            }}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#12b8cd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 className="dh-syne" style={{ fontSize: 20, fontWeight: 800, color: "#111827", margin: 0 }}>Configure OCR Integration</h3>
+                                <p className="dh-dm" style={{ fontSize: 13, color: "#6b7280", margin: "4px 0 0 0" }}>Select extraction engine for image/PDF files</p>
+                            </div>
+                        </div>
+
+                        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 28 }}>
+                            {/* Tesseract Option */}
+                            <div onClick={() => setSelectedOcrEngine("tesseract")} style={{
+                                padding: "16px 20px", borderRadius: 12, border: selectedOcrEngine === "tesseract" ? "2px solid #12b8cd" : "1px solid rgba(0,0,0,0.1)",
+                                background: selectedOcrEngine === "tesseract" ? "rgba(18,184,205,0.05)" : "#fff",
+                                cursor: "pointer", transition: "all 0.2s"
+                            }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                                    <span className="dh-syne" style={{ fontSize: 16, fontWeight: 700, color: "#111827" }}>Tesseract OCR</span>
+                                    {selectedOcrEngine === "tesseract" && <span style={{ color: "#12b8cd" }}>✔</span>}
+                                </div>
+                                <p className="dh-dm" style={{ fontSize: 12, color: "#4b5563", margin: 0 }}>Fast, local text extraction. Completely private and cost-free. Best for standard documents.</p>
+                            </div>
+
+                            {/* Textract Option */}
+                            <div onClick={() => setSelectedOcrEngine("textract")} style={{
+                                padding: "16px 20px", borderRadius: 12, border: selectedOcrEngine === "textract" ? "2px solid #12b8cd" : "1px solid rgba(0,0,0,0.1)",
+                                background: selectedOcrEngine === "textract" ? "rgba(18,184,205,0.05)" : "#fff",
+                                cursor: "pointer", transition: "all 0.2s"
+                            }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                                    <span className="dh-syne" style={{ fontSize: 16, fontWeight: 700, color: "#111827" }}>AWS Textract</span>
+                                    {selectedOcrEngine === "textract" && <span style={{ color: "#12b8cd" }}>✔</span>}
+                                </div>
+                                <p className="dh-dm" style={{ fontSize: 12, color: "#4b5563", margin: 0 }}>High accuracy cloud OCR. Superior table extraction and handwriting recognition.</p>
+                            </div>
+                        </div>
+
+                        <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+                            <button onClick={() => setPendingFile(null)} style={{
+                                padding: "10px 20px", borderRadius: 10, border: "none", background: "#f3f4f6",
+                                color: "#374151", fontWeight: 600, cursor: "pointer", fontSize: 14
+                            }}>Cancel</button>
+                            <button onClick={() => {
+                                executeUpload(pendingFile, selectedOcrEngine);
+                                setPendingFile(null);
+                            }} style={{
+                                padding: "10px 24px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#12b8cd,#3bb978)",
+                                color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 14, boxShadow: "0 4px 14px rgba(18,184,205,.35)"
+                            }}>Start Processing</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

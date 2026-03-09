@@ -190,6 +190,11 @@ const FILE_ICONS = {
     csv: { color: "#22c55e", label: "CSV" },
     xlsx: { color: "#22c55e", label: "XLSX" },
     xls: { color: "#22c55e", label: "XLS" },
+    png: { color: "#8b5cf6", label: "PNG" },
+    jpg: { color: "#8b5cf6", label: "JPG" },
+    jpeg: { color: "#8b5cf6", label: "JPG" },
+    gif: { color: "#8b5cf6", label: "GIF" },
+    webp: { color: "#8b5cf6", label: "WEBP" },
 };
 
 function FileTypeBadge({ ext }) {
@@ -216,6 +221,10 @@ export default function WorkspacePage() {
     const [selectedDocIds, setSelectedDocIds] = useState(new Set()); // docs selected for chat scoping
     const [dragOver, setDragOver] = useState(false);
     const fileInputRef = useRef(null);
+
+    // OCR Engine Selection Modal
+    const [pendingUploadFiles, setPendingUploadFiles] = useState(null);
+    const [selectedOcrEngine, setSelectedOcrEngine] = useState("tesseract");
 
     // Chat
     const [messages, setMessages] = useState([]);
@@ -305,10 +314,11 @@ export default function WorkspacePage() {
     }, [messages]);
 
     // === File upload logic ===
-    const addFiles = (newFiles) => {
+    const addFiles = (newFiles, ocr_engine = "tesseract") => {
         const entries = Array.from(newFiles).map((file, idx) => ({
             id: `${Date.now()}-${idx}-${file.name}`,
             file,
+            ocr_engine,
             status: "pending",
             result: null,
             error: null,
@@ -320,7 +330,7 @@ export default function WorkspacePage() {
     const startUpload = async (entry) => {
         setUploadedFiles(prev => prev.map(f => f.id === entry.id ? { ...f, status: "uploading" } : f));
         try {
-            const result = await uploadDocumentToWorkspace(entry.file, workspaceId);
+            const result = await uploadDocumentToWorkspace(entry.file, workspaceId, entry.ocr_engine);
             setUploadedFiles(prev => prev.map(f => f.id === entry.id ? { ...f, status: "done", result } : f));
             // Refresh doc list
             setDocsRefreshKey(k => k + 1);
@@ -334,13 +344,27 @@ export default function WorkspacePage() {
         }
     };
 
+    const processFileSelection = (filesArray) => {
+        if (!filesArray || filesArray.length === 0) return;
+        const needsOcr = filesArray.some(f => {
+            const ext = f.name.split(".").pop().toLowerCase();
+            return ["pdf", "jpg", "jpeg", "png", "webp", "jfif"].includes(ext);
+        });
+        if (needsOcr) {
+            setPendingUploadFiles(filesArray);
+            setSelectedOcrEngine("tesseract"); // default
+        } else {
+            addFiles(filesArray, "tesseract");
+        }
+    };
+
     const handleFilePick = (e) => {
-        if (e.target.files?.length) addFiles(e.target.files);
+        processFileSelection(Array.from(e.target.files));
         e.target.value = "";
     };
     const handleDrop = (e) => {
         e.preventDefault(); setDragOver(false);
-        if (e.dataTransfer.files?.length) addFiles(e.dataTransfer.files);
+        processFileSelection(Array.from(e.dataTransfer.files));
     };
 
     // === Chat logic ===
@@ -465,7 +489,7 @@ export default function WorkspacePage() {
                     Upload Files
                     <input
                         type="file"
-                        accept=".pdf,.docx,.txt,.csv,.xlsx,.xls"
+                        accept=".pdf,.docx,.txt,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.gif,.webp"
                         multiple
                         style={{ display: "none" }}
                         onChange={handleFilePick}
@@ -507,7 +531,7 @@ export default function WorkspacePage() {
                         <input
                             ref={fileInputRef}
                             type="file"
-                            accept=".pdf,.docx,.txt,.csv,.xlsx,.xls"
+                            accept=".pdf,.docx,.txt,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.gif,.webp"
                             multiple
                             style={{ display: "none" }}
                             onChange={handleFilePick}
@@ -963,7 +987,79 @@ export default function WorkspacePage() {
                         </div>
                     )}
                 </div>
-            </div >
-        </div >
+            </div>
+
+            {/* ── OCR Engine Modal ── */}
+            {pendingUploadFiles && (
+                <div className="wsp-fade" style={{
+                    position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.5)",
+                    display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)"
+                }} onClick={() => setPendingUploadFiles(null)}>
+                    <div style={{
+                        background: "#fff", padding: "32px", borderRadius: "24px", width: "100%", maxWidth: "500px",
+                        boxShadow: "0 24px 80px rgba(0,0,0,0.2)", display: "flex", flexDirection: "column"
+                    }} onClick={e => e.stopPropagation()}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+                            <div style={{
+                                width: 48, height: 48, borderRadius: 12, background: "linear-gradient(135deg,rgba(18,184,205,.15),rgba(18,184,205,.30))",
+                                display: "flex", alignItems: "center", justifyContent: "center"
+                            }}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#12b8cd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 className="wsp-syne" style={{ fontSize: 20, fontWeight: 800, color: "#111827", margin: 0 }}>Configure OCR Integration</h3>
+                                <p className="wsp-dm" style={{ fontSize: 13, color: "#6b7280", margin: "4px 0 0 0" }}>Select extraction engine for image/PDF files</p>
+                            </div>
+                        </div>
+
+                        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 28 }}>
+                            {/* Tesseract Option */}
+                            <div onClick={() => setSelectedOcrEngine("tesseract")} style={{
+                                padding: "16px 20px", borderRadius: 12, border: selectedOcrEngine === "tesseract" ? "2px solid #12b8cd" : "1px solid rgba(0,0,0,0.1)",
+                                background: selectedOcrEngine === "tesseract" ? "rgba(18,184,205,0.05)" : "#fff",
+                                cursor: "pointer", transition: "all 0.2s"
+                            }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                                    <span className="wsp-syne" style={{ fontSize: 16, fontWeight: 700, color: "#111827" }}>Tesseract OCR</span>
+                                    {selectedOcrEngine === "tesseract" && <span style={{ color: "#12b8cd" }}>✔</span>}
+                                </div>
+                                <p className="wsp-dm" style={{ fontSize: 12, color: "#4b5563", margin: 0 }}>Fast, local text extraction. Completely private and cost-free. Best for standard documents.</p>
+                            </div>
+
+                            {/* Textract Option */}
+                            <div onClick={() => setSelectedOcrEngine("textract")} style={{
+                                padding: "16px 20px", borderRadius: 12, border: selectedOcrEngine === "textract" ? "2px solid #12b8cd" : "1px solid rgba(0,0,0,0.1)",
+                                background: selectedOcrEngine === "textract" ? "rgba(18,184,205,0.05)" : "#fff",
+                                cursor: "pointer", transition: "all 0.2s"
+                            }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                                    <span className="wsp-syne" style={{ fontSize: 16, fontWeight: 700, color: "#111827" }}>AWS Textract</span>
+                                    {selectedOcrEngine === "textract" && <span style={{ color: "#12b8cd" }}>✔</span>}
+                                </div>
+                                <p className="wsp-dm" style={{ fontSize: 12, color: "#4b5563", margin: 0 }}>High accuracy cloud OCR. Superior table extraction and handwriting recognition.</p>
+                            </div>
+                        </div>
+
+                        <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+                            <button onClick={() => setPendingUploadFiles(null)} style={{
+                                padding: "10px 20px", borderRadius: 10, border: "none", background: "#f3f4f6",
+                                color: "#374151", fontWeight: 600, cursor: "pointer", fontSize: 14
+                            }}>Cancel</button>
+                            <button onClick={() => {
+                                addFiles(pendingUploadFiles, selectedOcrEngine);
+                                setPendingUploadFiles(null);
+                            }} style={{
+                                padding: "10px 24px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#12b8cd,#3bb978)",
+                                color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 14, boxShadow: "0 4px 14px rgba(18,184,205,.35)"
+                            }}>Start Processing</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }
