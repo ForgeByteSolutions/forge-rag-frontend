@@ -530,11 +530,42 @@ export default function DashboardMain() {
         }
 
         e.target.value = ""; // Clear input immediately
-        if (["pdf", "png", "jpg", "jpeg", "webp", "jfif"].includes(ext)) {
+
+        let needsOcr = false;
+        if (["png", "jpg", "jpeg", "webp", "jfif"].includes(ext)) {
+            needsOcr = true;
+        } else if (ext === "pdf") {
+            setUploading(true);
+            try {
+                const { pdfjs } = await import("react-pdf");
+                pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+                const pagesToCheck = Math.min(pdf.numPages, 5); // Check up to 5 pages
+
+                for (let i = 1; i <= pagesToCheck; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const text = textContent.items.map(item => item.str).join(' ').trim();
+                    // If any single page doesn't have much text, assume we need OCR (mixed PDF or fully scanned)
+                    if (text.length < 50) {
+                        needsOcr = true;
+                        break;
+                    }
+                }
+            } catch (err) {
+                console.error("PDF parsing error:", err);
+                needsOcr = true; // Fallback to ask if error
+            }
+            setUploading(false);
+        }
+
+        if (needsOcr) {
             setPendingFile(file);
             setSelectedOcrEngine("tesseract");
         } else {
-            executeUpload(file, "tesseract");
+            executeUpload(file, "none");
         }
     };
 
@@ -1023,6 +1054,20 @@ export default function DashboardMain() {
                                 </div>
                                 <p className="dh-dm" style={{ fontSize: 12, color: "#4b5563", margin: 0 }}>High accuracy cloud OCR. Superior table extraction and handwriting recognition.</p>
                             </div>
+
+                            {/* EasyOCR Option */}
+                            <div onClick={() => setSelectedOcrEngine("easyocr")} style={{
+                                padding: "16px 20px", borderRadius: 12, border: selectedOcrEngine === "easyocr" ? "2px solid #12b8cd" : "1px solid rgba(0,0,0,0.1)",
+                                background: selectedOcrEngine === "easyocr" ? "rgba(18,184,205,0.05)" : "#fff",
+                                cursor: "pointer", transition: "all 0.2s"
+                            }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                                    <span className="dh-syne" style={{ fontSize: 16, fontWeight: 700, color: "#111827" }}>EasyOCR</span>
+                                    {selectedOcrEngine === "easyocr" && <span style={{ color: "#12b8cd" }}>✔</span>}
+                                </div>
+                                <p className="dh-dm" style={{ fontSize: 12, color: "#4b5563", margin: 0 }}>Excellent for multilingual text and stylized fonts. Balanced speed and accuracy.</p>
+                            </div>
+
                         </div>
 
                         <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>

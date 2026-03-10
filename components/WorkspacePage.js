@@ -344,17 +344,48 @@ export default function WorkspacePage() {
         }
     };
 
-    const processFileSelection = (filesArray) => {
+    const processFileSelection = async (filesArray) => {
         if (!filesArray || filesArray.length === 0) return;
-        const needsOcr = filesArray.some(f => {
+
+        // Check if we need OCR by scanning PDF files for text
+        let needsOcr = false;
+        for (const f of filesArray) {
             const ext = f.name.split(".").pop().toLowerCase();
-            return ["pdf", "jpg", "jpeg", "png", "webp", "jfif"].includes(ext);
-        });
+            if (["jpg", "jpeg", "png", "webp", "jfif"].includes(ext)) {
+                needsOcr = true;
+                break;
+            } else if (ext === "pdf") {
+                try {
+                    const { pdfjs } = await import("react-pdf");
+                    pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+
+                    const arrayBuffer = await f.arrayBuffer();
+                    const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+                    const pagesToCheck = Math.min(pdf.numPages, 5); // Check up to 5 pages
+
+                    for (let i = 1; i <= pagesToCheck; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        const text = textContent.items.map(item => item.str).join(' ').trim();
+                        // If any single page doesn't have much text, assume we need OCR (mixed PDF or fully scanned)
+                        if (text.length < 50) {
+                            needsOcr = true;
+                            break;
+                        }
+                    }
+                } catch (err) {
+                    console.error("PDF parsing error:", err);
+                    needsOcr = true;
+                    break;
+                }
+            }
+        }
+
         if (needsOcr) {
             setPendingUploadFiles(filesArray);
             setSelectedOcrEngine("tesseract"); // default
         } else {
-            addFiles(filesArray, "tesseract");
+            addFiles(filesArray, "none");
         }
     };
 
@@ -1042,6 +1073,20 @@ export default function WorkspacePage() {
                                 </div>
                                 <p className="wsp-dm" style={{ fontSize: 12, color: "#4b5563", margin: 0 }}>High accuracy cloud OCR. Superior table extraction and handwriting recognition.</p>
                             </div>
+
+                            {/* EasyOCR Option */}
+                            <div onClick={() => setSelectedOcrEngine("easyocr")} style={{
+                                padding: "16px 20px", borderRadius: 12, border: selectedOcrEngine === "easyocr" ? "2px solid #12b8cd" : "1px solid rgba(0,0,0,0.1)",
+                                background: selectedOcrEngine === "easyocr" ? "rgba(18,184,205,0.05)" : "#fff",
+                                cursor: "pointer", transition: "all 0.2s"
+                            }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                                    <span className="wsp-syne" style={{ fontSize: 16, fontWeight: 700, color: "#111827" }}>EasyOCR</span>
+                                    {selectedOcrEngine === "easyocr" && <span style={{ color: "#12b8cd" }}>✔</span>}
+                                </div>
+                                <p className="wsp-dm" style={{ fontSize: 12, color: "#4b5563", margin: 0 }}>Excellent for multilingual text and stylized fonts. Balanced speed and accuracy.</p>
+                            </div>
+
                         </div>
 
                         <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
