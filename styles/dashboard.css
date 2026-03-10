@@ -1,0 +1,374 @@
+    .dh-syne {
+        font-family: var(--font-syne), sans-serif;
+    }
+
+    .dh-dm {
+        font-family: var(--font-dm), sans-serif;
+    }
+
+    @keyframes dh-float {
+
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-8px);
+        }
+    }
+
+    @keyframes dh-pulse-ring {
+        0% {
+            transform: scale(0.95);
+            opacity: 0.4;
+        }
+
+        70% {
+            transform: scale(1.2);
+            opacity: 0;
+        }
+
+        100% {
+            transform: scale(1.2);
+            opacity: 0;
+        }
+    }
+
+    @keyframes dh-spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes dh-progress {
+        0% {
+            width: 10%;
+        }
+
+        50% {
+            width: 75%;
+        }
+
+        100% {
+            width: 55%;
+        }
+    }
+
+    @keyframes dh-shimmer {
+        0% {
+            background-position: -200% center;
+        }
+
+        100% {
+            background-position: 200% center;
+        }
+    }
+
+    @keyframes dh-fade-up {
+        from {
+            opacity: 0;
+            transform: translateY(16px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes dh-particle {
+        0% {
+            transform: translateY(0) scale(1);
+            opacity: .7;
+        }
+
+        100% {
+            transform: translateY(-40px) scale(0);
+            opacity: 0;
+        }
+    }
+
+    .dh-float {
+        animation: dh-float 4s ease-in-out infinite;
+    }
+
+    .dh-spin-anim {
+        animation: dh-spin 1.2s linear infinite;
+    }
+
+    .dh-fade-1 {
+        animation: dh-fade-up .6s ease forwards;
+    }
+
+    .dh-fade-2 {
+        animation: dh-fade-up .6s .12s ease forwards;
+        opacity: 0;
+    }
+
+    .dh-fade-3 {
+        animation: dh-fade-up .6s .24s ease forwards;
+        opacity: 0;
+    }
+
+    .dh-shimmer-text {
+        background: linear-gradient(90deg, #1f2937 30%, #12b8cd 55%, #1f2937 80%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: dh-shimmer 4s linear infinite;
+    }
+
+    .dh-ring {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .dh-ring::before {
+        content: '';
+        position: absolute;
+        inset: -6px;
+        border-radius: 50%;
+        border: 2px solid rgba(18, 184, 205, .3);
+        animation: dh-pulse-ring 2.5s ease-out infinite;
+    }
+
+    .dh-card {
+        background: rgba(255, 255, 255, .98);
+        border: 1px solid rgba(0, 0, 0, .06);
+        border-radius: 20px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, .04), 0 20px 48px rgba(0, 0, 0, .08);
+        transition: all .3s ease;
+        overflow: hidden;
+    }
+
+    .dh-card:hover {
+        border-color: rgba(18, 184, 205, .2);
+        box-shadow: 0 4px 16px rgba(18, 184, 205, .08), 0 24px 64px rgba(0, 0, 0, .12);
+    }
+
+    .dh-drop {
+        border: 2px dashed rgba(18, 184, 205, .3);
+        border-radius: 18px;
+        background: linear-gradient(145deg, rgba(18, 184, 205, .02), rgba(18, 184, 205, .06));
+        cursor: pointer;
+        transition: border-color .22s, background .22s;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .dh-drop::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse at 60% 40%, rgba(18, 184, 205, .09) 0%, transparent 70%);
+        opacity: 0;
+        transition: opacity .3s;
+    }
+
+    .dh-drop:hover {
+        border-color: rgba(18, 184, 205, .6);
+        background: linear-gradient(145deg, rgba(18, 184, 205, .04), rgba(18, 184, 205, .08));
+    }
+
+    .dh-drop:hover::before {
+        opacity: 1;
+    }
+
+    .dh-dotgrid {
+        background-image: radial-gradient(circle, rgba(18, 184, 205, .12) 1px, transparent 1px);
+        background-size: 22px 22px;
+    }
+
+    .dh-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 12px;
+        border-radius: 999px;
+        background: rgba(18, 184, 205, .08);
+        border: 1px solid rgba(18, 184, 205, .16);
+        color: #3bb978;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: .04em;
+        font-family: var(--font-dm), sans-serif;
+    }
+
+    .dh-btn {
+        background: linear-gradient(135deg, #12b8cd, #3bb978);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 28px;
+        font-family: var(--font-syne), sans-serif;
+        font-weight: 700;
+        font-size: 12.5px;
+        letter-spacing: .04em;
+        cursor: pointer;
+        box-shadow: 0 4px 16px rgba(18, 184, 205, .35);
+        transition: transform .18s, box-shadow .18s;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .dh-btn::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(255, 255, 255, .15) 0%, transparent 55%);
+    }
+
+    .dh-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(18, 184, 205, .45);
+    }
+
+    .dh-btn:active {
+        transform: translateY(0);
+    }
+
+    .dh-btn-workspace {
+        background: transparent;
+        color: #12b8cd;
+        border: 1.5px solid rgba(18, 184, 205, .25);
+        border-radius: 12px;
+        padding: 10px 22px;
+        font-family: var(--font-syne), sans-serif;
+        font-weight: 700;
+        font-size: 12.5px;
+        letter-spacing: .04em;
+        cursor: pointer;
+        transition: all .25s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .dh-btn-workspace:hover {
+        background: rgba(18, 184, 205, .06);
+        border-color: rgba(18, 184, 205, .5);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(18, 184, 205, .15);
+    }
+
+    .dh-btn-workspace:active {
+        transform: translateY(0);
+    }
+
+    .dh-particle {
+        position: absolute;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #12b8cd;
+        animation: dh-particle 1.6s ease-out infinite;
+    }
+
+    .dh-bg {
+        background-color: #f7f8fa;
+        background-image:
+            radial-gradient(ellipse 80% 55% at 50% -5%, rgba(18, 184, 205, .08) 0%, transparent 70%),
+            linear-gradient(rgba(18, 184, 205, .03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(18, 184, 205, .03) 1px, transparent 1px);
+        background-size: auto, 28px 28px, 28px 28px;
+    }
+
+    .dh-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        background: rgba(0, 0, 0, .4);
+        backdrop-filter: blur(6px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: dh-fade-up .25s ease;
+    }
+
+    .dh-modal {
+        background: #fff;
+        border-radius: 24px;
+        box-shadow: 0 24px 80px rgba(0, 0, 0, .18);
+        padding: 32px;
+        width: 100%;
+        max-width: 420px;
+        animation: dh-fade-up .3s ease;
+    }
+
+    .dh-input {
+        width: 100%;
+        padding: 14px 18px;
+        border: 1.5px solid rgba(0, 0, 0, .1);
+        border-radius: 12px;
+        font-size: 15px;
+        outline: none;
+        font-family: var(--font-dm), sans-serif;
+        transition: border-color .2s, box-shadow .2s;
+    }
+
+    .dh-input:focus {
+        border-color: #12b8cd;
+        box-shadow: 0 0 0 3px rgba(18, 184, 205, .12);
+    }
+
+    .dh-divider-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        width: 100%;
+        max-width: 420px;
+    }
+
+    .dh-divider-line {
+        flex: 1;
+        height: 1px;
+        background: rgba(0, 0, 0, .08);
+    }
+
+    /* Sidebar slide */
+    .sb-wrapper {
+        flex-shrink: 0;
+        overflow: hidden;
+        transition: width 0.28s cubic-bezier(.4, 0, .2, 1);
+        height: 100%;
+    }
+
+    /* Toggle button */
+    .sb-toggle {
+        position: absolute;
+        top: 14px;
+        left: 14px;
+        z-index: 50;
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(0, 0, 0, .09);
+        box-shadow: 0 1px 6px rgba(0, 0, 0, .1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background .18s, box-shadow .18s, transform .15s, left 0.28s cubic-bezier(.4, 0, .2, 1);
+        backdrop-filter: blur(6px);
+    }
+
+    .sb-toggle:hover {
+        background: #fff;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, .14);
+        transform: scale(1.06);
+    }
+
+    /* Logo fade */
+    .sb-logo {
+        transition: opacity 0.22s ease, transform 0.22s ease;
+    }
+
+    .sb-logo.hidden-logo {
+        opacity: 0;
+        pointer-events: none;
+        transform: translateX(-8px);
+    }

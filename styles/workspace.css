@@ -1,0 +1,383 @@
+    .wsp-syne {
+        font-family: var(--font-syne), sans-serif;
+    }
+
+    .wsp-dm {
+        font-family: var(--font-dm), sans-serif;
+    }
+
+    @keyframes wsp-float {
+
+        0%,
+        100% {
+            transform: translateY(0)
+        }
+
+        50% {
+            transform: translateY(-6px)
+        }
+    }
+
+    @keyframes wsp-spin {
+        to {
+            transform: rotate(360deg)
+        }
+    }
+
+    @keyframes wsp-fade {
+        from {
+            opacity: 0;
+            transform: translateY(14px)
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0)
+        }
+    }
+
+    @keyframes wsp-badge {
+        from {
+            opacity: 0;
+            transform: scale(.85)
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1)
+        }
+    }
+
+    @keyframes wsp-check {
+        0% {
+            transform: scale(0)
+        }
+
+        60% {
+            transform: scale(1.2)
+        }
+
+        100% {
+            transform: scale(1)
+        }
+    }
+
+    @keyframes wsp-progress {
+        0% {
+            transform: translateX(-100%)
+        }
+
+        100% {
+            transform: translateX(400%)
+        }
+    }
+
+    @keyframes wsp-pulse {
+
+        0%,
+        100% {
+            opacity: .5
+        }
+
+        50% {
+            opacity: 1
+        }
+    }
+
+    @keyframes wsp-msg-in {
+        from {
+            opacity: 0;
+            transform: translateY(8px)
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0)
+        }
+    }
+
+    .wsp-bg {
+        background-color: #f7f8fa;
+        background-image:
+            radial-gradient(ellipse 80% 55% at 50% -5%, rgba(18, 184, 205, .08) 0%, transparent 70%),
+            linear-gradient(rgba(18, 184, 205, .03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(18, 184, 205, .03) 1px, transparent 1px);
+        background-size: auto, 28px 28px, 28px 28px;
+    }
+
+    /* Left panel */
+    .wsp-left {
+        width: 320px;
+        min-width: 260px;
+        flex-shrink: 0;
+        background: #fff;
+        border-right: 1px solid rgba(0, 0, 0, .07);
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    /* Drop zone */
+    .wsp-drop {
+        border: 2px dashed rgba(18, 184, 205, .3);
+        border-radius: 14px;
+        background: linear-gradient(145deg, rgba(18, 184, 205, .02), rgba(18, 184, 205, .06));
+        cursor: pointer;
+        transition: border-color .2s, background .2s;
+        position: relative;
+    }
+
+    .wsp-drop:hover,
+    .wsp-drop.drag-over {
+        border-color: rgba(18, 184, 205, .65);
+        background: linear-gradient(145deg, rgba(18, 184, 205, .05), rgba(18, 184, 205, .11));
+    }
+
+    /* File card */
+    .wsp-file-card {
+        background: #f9fafb;
+        border: 1px solid rgba(0, 0, 0, .06);
+        border-radius: 10px;
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: wsp-fade .35s ease forwards;
+        transition: border-color .2s;
+    }
+
+    .wsp-file-card:hover {
+        border-color: rgba(18, 184, 205, .2);
+    }
+
+    /* Progress */
+    .wsp-prog-bar {
+        height: 3px;
+        border-radius: 3px;
+        background: #f0f0f0;
+        overflow: hidden;
+        margin-top: 5px;
+    }
+
+    .wsp-prog-fill {
+        height: 100%;
+        border-radius: 3px;
+        background: linear-gradient(90deg, #12b8cd, #34d399);
+        animation: wsp-progress 1.4s ease-in-out infinite;
+        width: 30%;
+    }
+
+    /* Badge */
+    .wsp-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 10px;
+        border-radius: 999px;
+        background: rgba(18, 184, 205, .08);
+        border: 1px solid rgba(18, 184, 205, .16);
+        color: #3bb978;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: .04em;
+    }
+
+    /* Btn */
+    .wsp-btn {
+        background: linear-gradient(135deg, #12b8cd, #3bb978);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 22px;
+        font-family: var(--font-syne), sans-serif;
+        font-weight: 700;
+        font-size: 13px;
+        letter-spacing: .04em;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(18, 184, 205, .35);
+        transition: transform .17s, box-shadow .17s;
+    }
+
+    .wsp-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 7px 20px rgba(18, 184, 205, .45);
+    }
+
+    .wsp-btn:active {
+        transform: translateY(0);
+    }
+
+    .wsp-btn-outline {
+        background: transparent;
+        color: #12b8cd;
+        border: 1.5px solid rgba(18, 184, 205, .3);
+        border-radius: 9px;
+        padding: 7px 16px;
+        font-size: 12px;
+        font-family: var(--font-syne), sans-serif;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: all .2s;
+    }
+
+    .wsp-btn-outline:hover {
+        background: rgba(18, 184, 205, .06);
+        border-color: rgba(18, 184, 205, .5);
+    }
+
+    /* Chat right panel */
+    .wsp-right {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: #f7f8fa;
+    }
+
+    .wsp-chat-scroll {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .wsp-chat-scroll::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .wsp-chat-scroll::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, .12);
+        border-radius: 4px;
+    }
+
+    /* Messages */
+    .wsp-msg {
+        animation: wsp-msg-in .3s ease forwards;
+        max-width: 78%;
+    }
+
+    .wsp-msg.user {
+        align-self: flex-end;
+    }
+
+    .wsp-msg.ai {
+        align-self: flex-start;
+    }
+
+    .wsp-bubble-user {
+        background: linear-gradient(135deg, #12b8cd, #3bb978);
+        color: #fff;
+        padding: 12px 18px;
+        border-radius: 18px 18px 4px 18px;
+        font-size: 14px;
+        line-height: 1.55;
+        box-shadow: 0 3px 12px rgba(18, 184, 205, .28);
+    }
+
+    .wsp-bubble-ai {
+        background: #fff;
+        border: 1px solid rgba(0, 0, 0, .07);
+        color: #111827;
+        padding: 14px 20px;
+        border-radius: 18px 18px 18px 4px;
+        font-size: 14px;
+        line-height: 1.6;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, .06);
+    }
+
+    /* Input bar */
+    .wsp-input-area {
+        padding: 16px 24px;
+        background: #fff;
+        border-top: 1px solid rgba(0, 0, 0, .07);
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+        flex-shrink: 0;
+    }
+
+    .wsp-textarea {
+        flex: 1;
+        resize: none;
+        border: 1.5px solid rgba(0, 0, 0, .1);
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 14px;
+        outline: none;
+        font-family: var(--font-dm), sans-serif;
+        transition: border-color .2s, box-shadow .2s;
+        max-height: 140px;
+        min-height: 46px;
+        line-height: 1.5;
+        background: #f9fafb;
+    }
+
+    .wsp-textarea:focus {
+        border-color: #12b8cd;
+        box-shadow: 0 0 0 3px rgba(18, 184, 205, .1);
+        background: #fff;
+    }
+
+    .wsp-send {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #12b8cd, #3bb978);
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 3px 10px rgba(18, 184, 205, .35);
+        transition: transform .17s, box-shadow .17s;
+        flex-shrink: 0;
+    }
+
+    .wsp-send:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 5px 16px rgba(18, 184, 205, .45);
+    }
+
+    .wsp-send:disabled {
+        opacity: .5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    /* Empty chat state */
+    .wsp-chat-empty {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #9ca3af;
+        gap: 14px;
+        padding: 40px;
+        text-align: center;
+    }
+
+    .wsp-dotgrid {
+        background-image: radial-gradient(circle, rgba(18, 184, 205, .12) 1px, transparent 1px);
+        background-size: 22px 22px;
+    }
+
+    .wsp-scroll-left {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px;
+    }
+
+    .wsp-scroll-left::-webkit-scrollbar {
+        width: 3px;
+    }
+
+    .wsp-scroll-left::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, .1);
+        border-radius: 3px;
+    }
