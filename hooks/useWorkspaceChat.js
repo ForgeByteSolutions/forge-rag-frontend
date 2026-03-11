@@ -11,8 +11,23 @@ export function useWorkspaceChat(workspaceId) {
     const [messages, setMessages] = useState([]);
     const [question, setQuestion] = useState("");
     const [streaming, setStreaming] = useState(false);
+    const streamingRef = useRef(false);
+    const abortControllerRef = useRef(null);
     const [model, setModel] = useState("meta-llama/Llama-3.3-70B-Instruct");
     const chatScrollRef = useRef(null);
+
+    useEffect(() => {
+        streamingRef.current = streaming;
+    }, [streaming]);
+
+    // Cleanup stream on unmount
+    useEffect(() => {
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, []);
 
     // Load chat history on mount
     useEffect(() => {
@@ -23,7 +38,7 @@ export function useWorkspaceChat(workspaceId) {
                 if (history.length > 0) {
                     setMessages(history.map((msg, i) => ({
                         id: i,
-                        role: msg.role === "user" ? "user" : "ai",
+                        role: ["user", "human"].includes(msg.role) ? "user" : "ai",
                         content: msg.content,
                         citations: msg.citations || [],
                         streaming: false,
@@ -42,7 +57,7 @@ export function useWorkspaceChat(workspaceId) {
 
     const handleSend = async (selectedDocIds) => {
         const q = question.trim();
-        if (!q || streaming) return;
+        if (!q || streamingRef.current) return;
         setQuestion("");
         setMessages(prev => [...prev, { role: "user", content: q }]);
         setStreaming(true);
@@ -50,12 +65,15 @@ export function useWorkspaceChat(workspaceId) {
         const aiMsgId = Date.now();
         setMessages(prev => [...prev, { role: "ai", content: "", id: aiMsgId, streaming: true }]);
 
+        abortControllerRef.current = new AbortController();
+
         try {
             await streamChat({
                 question: q,
                 workspace_id: workspaceId,
                 doc_ids: selectedDocIds?.size > 0 ? Array.from(selectedDocIds) : null,
                 model,
+                signal: abortControllerRef.current.signal,
                 onToken: (token) => {
                     setMessages(prev => prev.map(m =>
                         m.id === aiMsgId ? { ...m, content: m.content + token } : m
@@ -68,6 +86,7 @@ export function useWorkspaceChat(workspaceId) {
                 },
             });
         } catch (err) {
+            if (err.name === "AbortError") return;
             setMessages(prev => prev.map(m =>
                 m.id === aiMsgId ? { ...m, content: "⚠️ Failed to get a response. Please try again.", streaming: false } : m
             ));
@@ -76,6 +95,7 @@ export function useWorkspaceChat(workspaceId) {
                 m.id === aiMsgId ? { ...m, streaming: false } : m
             ));
             setStreaming(false);
+            abortControllerRef.current = null;
         }
     };
 

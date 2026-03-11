@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { getToken } from "@/lib/auth";
+import { uploadDocument } from "@/lib/api";
 
 /**
  * Handles file upload with OCR detection.
@@ -14,16 +14,8 @@ export function useUploadDocument({ onSuccess, router }) {
     const executeUpload = async (file, ocrEngine) => {
         try {
             setUploading(true);
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("workspace_id", "none");
-            formData.append("ocr_engine", ocrEngine);
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_BASE}/documents/upload`,
-                { method: "POST", headers: { Authorization: `Bearer ${await getToken()}` }, body: formData }
-            );
-            if (!response.ok) throw new Error(await response.text());
-            const data = await response.json();
+            setUploading(true);
+            const data = await uploadDocument(file, ocrEngine);
             const newDocId = data.doc_id || data.id;
             if (!newDocId) throw new Error("No doc id returned");
             if (onSuccess) onSuccess();
@@ -44,7 +36,7 @@ export function useUploadDocument({ onSuccess, router }) {
         const file = e.target.files[0];
         if (!file) return;
         const ext = file.name.split(".").pop().toLowerCase();
-        if (!["pdf", "docx", "txt", "csv", "xlsx", "xls", "png", "jpg", "jpeg", "gif", "webp"].includes(ext)) {
+        if (!["pdf", "docx", "txt", "csv", "xlsx", "xls", "png", "jpg", "jpeg", "gif", "webp", "jfif"].includes(ext)) {
             alert("❌ Invalid file type!"); return;
         }
 

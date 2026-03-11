@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import "@/styles/workspace.css";
@@ -30,6 +30,12 @@ export default function ChatPanel({
     selectedDocIds,
 }) {
     const chatScrollRef = useRef(null);
+
+    useEffect(() => {
+        if (chatScrollRef.current) {
+            chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+        }
+    }, [messages]);
 
     const handleKeyDown = (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -134,7 +140,7 @@ export default function ChatPanel({
                     className="wsp-textarea wsp-dm"
                     placeholder={
                         hasDocuments
-                            ? (selectedDocIds.size > 0
+                            ? (selectedDocIds?.size > 0
                                 ? `Ask a question about ${selectedDocIds.size} selected document(s)…`
                                 : "Ask a question about your documents…")
                             : "Upload documents to start chatting…"

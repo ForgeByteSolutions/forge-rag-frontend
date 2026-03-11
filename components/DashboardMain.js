@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { isLoggedIn, getToken } from "@/lib/auth";
 import { createWorkspace } from "@/lib/api";
-import { Syne, DM_Sans } from "next/font/google";
 
 import Sidebar from "@/components/Sidebar";
 import ChatBox from "@/components/ChatBox";
@@ -23,9 +22,6 @@ import { useRiskAnalysis } from "@/hooks/useRiskAnalysis";
 
 import "@/styles/dashboard.css";
 
-const syne = Syne({ subsets: ["latin"], weight: ["600", "700", "800"], display: "swap", variable: "--font-syne" });
-const dmSans = DM_Sans({ subsets: ["latin"], weight: ["300", "400", "500", "700"], display: "swap", variable: "--font-dm" });
-
 const SIDEBAR_WIDTH = 250;
 
 export default function DashboardMain() {
@@ -37,6 +33,7 @@ export default function DashboardMain() {
     const [activeCitation, setActiveCitation] = useState(null);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [creatingWorkspace, setCreatingWorkspace] = useState(false);
+    const [isAuthChecking, setIsAuthChecking] = useState(true);
 
     // Hooks
     const [selectedDoc, setSelectedDoc] = useDocumentSync(params, router);
@@ -55,6 +52,7 @@ export default function DashboardMain() {
 
     useEffect(() => {
         if (!isLoggedIn()) router.push("/login");
+        else setIsAuthChecking(false);
     }, [router]);
 
     useEffect(() => {
@@ -82,8 +80,10 @@ export default function DashboardMain() {
 
     const tab = searchParams?.get("tab");
 
+    if (isAuthChecking) return null;
+
     return (
-        <div className={`${syne.variable} ${dmSans.variable} flex h-screen w-screen overflow-hidden bg-white relative`}>
+        <div className={`flex h-screen w-screen overflow-hidden bg-white relative`}>
 
             {/* Floating Sidebar Toggle */}
             <SidebarToggle
@@ -194,7 +194,7 @@ export default function DashboardMain() {
                             <ChatBox
                                 selectedDocId={selectedDoc?.id || null}
                                 selectedDocName={selectedDoc?.filename || null}
-                                onViewCitation={citation => setActiveCitation(citation)}
+                                onViewCitation={setActiveCitation}
                                 onSwitchToRisk={() => router.push(`/dashboard/${selectedDoc.id}?tab=risk`)}
                                 isCitationActive={!!activeCitation}
                             />

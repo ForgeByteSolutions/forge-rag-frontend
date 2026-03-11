@@ -16,7 +16,7 @@ export default function ChatInput({ onSendMessage, loading, selectedDocName, the
 
     const handleSubmit = (e) => {
         e?.preventDefault();
-        if (!text.trim() || loading) return;
+        if (!text.trim() || loading || text.length > 4000) return;
         onSendMessage(text);
         setText("");
     };
@@ -63,6 +63,14 @@ export default function ChatInput({ onSendMessage, loading, selectedDocName, the
                         className="m-0 w-full resize-none border-0 bg-transparent p-0 pr-10 focus:ring-0 focus-visible:ring-0 pl-2 md:pl-0 text-base focus:outline-none max-h-[200px]"
                         disabled={loading}
                     />
+
+                    <div className="absolute bottom-2 right-12 text-[10px] text-gray-400">
+                        {text.length > 3500 && (
+                            <span className={text.length > 4000 ? "text-red-500 font-bold" : ""}>
+                                {text.length} / 4000
+                            </span>
+                        )}
+                    </div>
 
                     <button
                         onClick={handleSubmit}

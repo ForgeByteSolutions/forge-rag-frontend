@@ -2,6 +2,21 @@ import ThinkingLoader from "./ThinkingLoader";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+const mdComponents = {
+    h1: ({ node, ...props }) => <h1 className="text-xl font-bold mt-5 mb-3 text-[#0f172a]" {...props} />,
+    h2: ({ node, ...props }) => <h2 className="text-lg font-bold mt-4 mb-2 text-[#0f172a]" {...props} />,
+    h3: ({ node, ...props }) => <h3 className="text-md font-bold mt-3 mb-2 text-[#0f172a]" {...props} />,
+    p: ({ node, ...props }) => <p className="mb-3 last:mb-0 text-gray-800 leading-relaxed" {...props} />,
+    ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-3 space-y-1 text-gray-800" {...props} />,
+    ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-3 space-y-1 text-gray-800" {...props} />,
+    li: ({ node, ...props }) => <li className="" {...props} />,
+    strong: ({ node, ...props }) => <strong className="font-semibold text-[#0f172a]" {...props} />,
+    code: ({ node, inline, ...props }) =>
+        inline ? <code className="bg-gray-100 rounded px-1.5 py-0.5 text-[0.85em] font-mono text-pink-600" {...props} />
+            : <code className="block bg-gray-100 p-3 rounded-md my-3 text-[0.85em] font-mono text-gray-800 overflow-x-auto border border-gray-200" {...props} />,
+    blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-[#12b8cd] pl-3 italic text-gray-600 my-3" {...props} />,
+};
+
 export default function ChatMessage({ message, onViewCitation, themed }) {
     const isAi = message.type === "ai";
 
@@ -31,20 +46,7 @@ export default function ChatMessage({ message, onViewCitation, themed }) {
                             isAi ? (
                                 <ReactMarkdown
                                     remarkPlugins={[remarkGfm]}
-                                    components={{
-                                        h1: ({ node, ...props }) => <h1 className="text-xl font-bold mt-5 mb-3 text-[#0f172a]" {...props} />,
-                                        h2: ({ node, ...props }) => <h2 className="text-lg font-bold mt-4 mb-2 text-[#0f172a]" {...props} />,
-                                        h3: ({ node, ...props }) => <h3 className="text-md font-bold mt-3 mb-2 text-[#0f172a]" {...props} />,
-                                        p: ({ node, ...props }) => <p className="mb-3 last:mb-0 text-gray-800 leading-relaxed" {...props} />,
-                                        ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-3 space-y-1 text-gray-800" {...props} />,
-                                        ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-3 space-y-1 text-gray-800" {...props} />,
-                                        li: ({ node, ...props }) => <li className="" {...props} />,
-                                        strong: ({ node, ...props }) => <strong className="font-semibold text-[#0f172a]" {...props} />,
-                                        code: ({ node, inline, ...props }) =>
-                                            inline ? <code className="bg-gray-100 rounded px-1.5 py-0.5 text-[0.85em] font-mono text-pink-600" {...props} />
-                                                : <code className="block bg-gray-100 p-3 rounded-md my-3 text-[0.85em] font-mono text-gray-800 overflow-x-auto border border-gray-200" {...props} />,
-                                        blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-[#12b8cd] pl-3 italic text-gray-600 my-3" {...props} />,
-                                    }}
+                                    components={mdComponents}
                                 >
                                     {message.content}
                                 </ReactMarkdown>

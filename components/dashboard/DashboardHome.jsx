@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Syne, DM_Sans } from "next/font/google";
 import "@/styles/dashboard.css";
 
-const syne = Syne({ subsets: ["latin"], weight: ["600", "700", "800"], display: "swap", variable: "--font-syne" });
-const dmSans = DM_Sans({ subsets: ["latin"], weight: ["300", "400", "500", "700"], display: "swap", variable: "--font-dm" });
+
 
 export default function DashboardHome({ onUpload, uploading, sidebarOpen, onCreateWorkspace, creatingWorkspace }) {
     const [showModal, setShowModal] = useState(false);
@@ -14,13 +12,15 @@ export default function DashboardHome({ onUpload, uploading, sidebarOpen, onCrea
     const handleCreate = async () => {
         const name = wsName.trim();
         if (!name) return;
+
+        await onCreateWorkspace(name);
+
         setShowModal(false);
         setWsName("");
-        onCreateWorkspace(name);
     };
 
     return (
-        <div className={`${syne.variable} ${dmSans.variable} dh-dm dh-bg flex-1 flex flex-col items-center justify-center px-4 py-8 overflow-y-auto`}>
+        <div className={`dh-dm dh-bg flex-1 flex flex-col items-center justify-center px-4 py-8 overflow-y-auto`}>
 
             {/* Logo — hidden when sidebar is open */}
             <div className={`sb-logo dh-fade-1 flex items-center gap-3 mb-8 ${sidebarOpen ? 'hidden-logo' : ''}`}>

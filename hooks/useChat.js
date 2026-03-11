@@ -10,8 +10,24 @@ import { streamChat, getChatHistory } from "@/lib/api";
 export function useChat(selectedDocId, model) {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
+    const loadingRef = useRef(false);
+    const abortControllerRef = useRef(null);
     const [historyLoading, setHistoryLoading] = useState(false);
     const scrollRef = useRef(null);
+
+    // Sync loading state
+    useEffect(() => {
+        loadingRef.current = loading;
+    }, [loading]);
+
+    // Cleanup stream on unmount
+    useEffect(() => {
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, []);
 
     // Load history whenever the selected doc changes
     useEffect(() => {
@@ -44,15 +60,16 @@ export function useChat(selectedDocId, model) {
     }, [messages, historyLoading]);
 
     const sendMessage = useCallback(async (content) => {
-        if (!content.trim() || loading) return;
+        if (!content.trim() || loadingRef.current) return;
 
-        const userMsg = { type: "user", content };
+        const userMsg = { id: Date.now() + "-user", type: "user", content };
         setMessages(prev => [...prev, userMsg]);
 
         const aiMsgId = Date.now();
         setMessages(prev => [...prev, { id: aiMsgId, type: "ai", content: "", citations: [] }]);
 
         setLoading(true);
+        abortControllerRef.current = new AbortController();
 
         try {
             let fullAnswer = "";
@@ -60,6 +77,7 @@ export function useChat(selectedDocId, model) {
                 question: content,
                 doc_id: selectedDocId,
                 model,
+                signal: abortControllerRef.current.signal,
                 onToken: (token) => {
                     fullAnswer += token;
                     setMessages(prev =>
@@ -73,6 +91,7 @@ export function useChat(selectedDocId, model) {
                 },
             });
         } catch (err) {
+            if (err.name === "AbortError") return;
             console.error("Chat error:", err);
             setMessages(prev =>
                 prev.map(m => m.id === aiMsgId
@@ -82,8 +101,9 @@ export function useChat(selectedDocId, model) {
             );
         } finally {
             setLoading(false);
+            abortControllerRef.current = null;
         }
-    }, [selectedDocId, model, loading]);
+    }, [selectedDocId, model]);
 
     return { messages, loading, historyLoading, sendMessage, scrollRef };
 }

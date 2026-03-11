@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { analyzeRisk } from "@/lib/api";
+import { analyzeRisk, getAllRisks } from "@/lib/api";
 
 /**
  * Handles risk analysis for the current doc (auto-triggered on ?tab=risk).
@@ -35,7 +35,6 @@ export function useRiskAnalysis(searchParams, selectedDoc) {
         try {
             setShowRiskDashboard(true);
             setLoadingAllRisks(true);
-            const { getAllRisks } = await import("@/lib/api");
             const data = await getAllRisks();
             setAllRisksData(data?.risks || []);
         } catch (err) {

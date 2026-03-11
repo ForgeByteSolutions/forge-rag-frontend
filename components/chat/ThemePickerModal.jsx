@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import "@/styles/chatThemes.css";
 
 // Theme definitions — matches files in /public/themes/
@@ -17,7 +18,16 @@ const THEMES = [
 ];
 
 export default function ThemePickerModal({ open, onClose, activeTheme, setActiveTheme }) {
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') onClose();
+        };
+        if (open) window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [open, onClose]);
+
     if (!open) return null;
+
 
     return (
         <div className="cb-theme-overlay" onClick={onClose}>

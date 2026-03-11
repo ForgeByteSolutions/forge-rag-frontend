@@ -30,6 +30,9 @@ export function useWorkspaceUpload({ workspaceId, onUploadSuccess, onContractDet
         try {
             const result = await uploadDocumentToWorkspace(entry.file, workspaceId, entry.ocr_engine);
             setUploadedFiles(prev => prev.map(f => f.id === entry.id ? { ...f, status: "done", result } : f));
+            setTimeout(() => {
+                setUploadedFiles(prev => prev.filter(f => f.id !== entry.id));
+            }, 4000);
             if (onUploadSuccess) onUploadSuccess();
             if (result?.is_contract && result?.doc_id) {
                 onContractDetected?.({ docName: entry.file.name, doc_id: result.doc_id });
@@ -42,31 +45,38 @@ export function useWorkspaceUpload({ workspaceId, onUploadSuccess, onContractDet
     const processFileSelection = async (filesArray) => {
         if (!filesArray || filesArray.length === 0) return;
 
-        let needsOcr = false;
-        for (const f of filesArray) {
+        const checkPdf = async (f) => {
+            try {
+                const { pdfjs } = await import("react-pdf");
+                pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+                const arrayBuffer = await f.arrayBuffer();
+                const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+                const pagesToCheck = Math.min(pdf.numPages, 5);
+                for (let i = 1; i <= pagesToCheck; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const text = textContent.items.map(item => item.str).join(' ').trim();
+                    if (text.length < 50) return true;
+                }
+                return false;
+            } catch (err) {
+                console.error("PDF parsing error:", err);
+                return true;
+            }
+        };
+
+        const checks = filesArray.map(async f => {
             const ext = f.name.split(".").pop().toLowerCase();
             if (["jpg", "jpeg", "png", "webp", "jfif"].includes(ext)) {
-                needsOcr = true; break;
+                return true;
             } else if (ext === "pdf") {
-                try {
-                    const { pdfjs } = await import("react-pdf");
-                    pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
-                    const arrayBuffer = await f.arrayBuffer();
-                    const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
-                    const pagesToCheck = Math.min(pdf.numPages, 5);
-                    for (let i = 1; i <= pagesToCheck; i++) {
-                        const page = await pdf.getPage(i);
-                        const textContent = await page.getTextContent();
-                        const text = textContent.items.map(item => item.str).join(' ').trim();
-                        if (text.length < 50) { needsOcr = true; break; }
-                    }
-                } catch (err) {
-                    console.error("PDF parsing error:", err);
-                    needsOcr = true; break;
-                }
+                return await checkPdf(f);
             }
-            if (needsOcr) break;
-        }
+            return false;
+        });
+
+        const results = await Promise.all(checks);
+        const needsOcr = results.includes(true);
 
         if (needsOcr) {
             setPendingUploadFiles(filesArray);
