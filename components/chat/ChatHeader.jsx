@@ -1,6 +1,7 @@
 "use client";
 
 import "@/styles/chatThemes.css";
+import { useRouter } from "next/navigation";
 
 export default function ChatHeader({
     selectedDocName,
@@ -12,6 +13,7 @@ export default function ChatHeader({
     onSwitchToRisk,
     selectedDocId,
 }) {
+    const router = useRouter();
     return (
         <div style={{
             height: 58,
@@ -62,6 +64,15 @@ export default function ChatHeader({
 
             {/* Right: controls */}
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                {/* Dashboard button */}
+                <button
+                    onClick={() => router.push("/dashboard")}
+                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg border border-cyan-500/20 bg-cyan-50/50 text-cyan-700 text-[13.0px] font-bold transition-all hover:bg-cyan-100/80 hover:border-cyan-500/40 hover:-translate-y-0.5 hover:shadow-sm"
+                    title="Go to Dashboard"
+                >
+                    Dashboard
+                </button>
+
                 {/* Themes button */}
                 <button className="cb-themes-btn" onClick={onOpenThemes} title="Change chat background">
                     🎨 Themes
