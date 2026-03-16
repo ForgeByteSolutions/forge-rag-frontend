@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getDocuments, getWorkspaces } from "@/lib/api";
+import { getDocuments, getWorkspaces, deleteDocument } from "@/lib/api";
 import { logout } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 
@@ -15,13 +15,22 @@ export default function Sidebar({ selectedDocId, onSelectDoc, refreshKey }) {
     const [loadingDocs, setLoadingDocs] = useState(true);
     const [loadingWS, setLoadingWS] = useState(true);
 
+    const fetchDocs = async () => {
+        try {
+            const docs = await getDocuments();
+            setDocuments((docs || []).filter(d => !d.workspace_id));
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     useEffect(() => {
         async function fetchData() {
             setLoadingDocs(true);
             setLoadingWS(true);
 
             Promise.allSettled([
-                getDocuments().then(docs => setDocuments((docs || []).filter(d => !d.workspace_id))),
+                fetchDocs(),
                 getWorkspaces().then(ws => setWorkspaces(ws || []))
             ]).finally(() => {
                 setLoadingDocs(false);
@@ -30,6 +39,21 @@ export default function Sidebar({ selectedDocId, onSelectDoc, refreshKey }) {
         }
         fetchData();
     }, [refreshKey]);
+
+    const handleDeleteDoc = async (e, docId) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!confirm("Are you sure you want to delete this document?")) return;
+        
+        try {
+            await deleteDocument(docId);
+            if (selectedDocId === docId) onSelectDoc(null);
+            await fetchDocs();
+        } catch (err) {
+            console.error("Failed to delete document", err);
+            alert("Failed to delete document");
+        }
+    };
 
     const handleLogout = () => {
         logout();
@@ -82,21 +106,33 @@ export default function Sidebar({ selectedDocId, onSelectDoc, refreshKey }) {
                             <div className="sb-empty">No documents uploaded yet</div>
                         ) : (
                             documents.map((doc) => (
-                                <button
+                                <div
                                     key={doc.id}
-                                    className={`sb-doc-item ${selectedDocId === doc.id ? "selected" : ""}`}
+                                    className={`sb-doc-item group flex justify-between items-center cursor-pointer ${selectedDocId === doc.id ? "selected" : ""}`}
                                     onClick={() => onSelectDoc(doc)}
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="truncate text-sm leading-snug">{doc.filename}</span>
-                                        <span className="text-[10px] text-gray-500">
-                                            {(doc.file_size / 1024).toFixed(0)} KB • {new Date(doc.upload_date).toLocaleDateString()}
-                                        </span>
+                                    <div className="flex items-center gap-3 min-w-0" style={{ maxWidth: '85%' }}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <div className="flex flex-col min-w-0">
+                                            <span className="truncate text-sm leading-snug">{doc.filename}</span>
+                                            <span className="text-[10px] text-gray-500">
+                                                {(doc.file_size / 1024).toFixed(0)} KB • {new Date(doc.upload_date).toLocaleDateString()}
+                                            </span>
+                                        </div>
                                     </div>
-                                </button>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => handleDeleteDoc(e, doc.id)}
+                                        className="p-1 text-gray-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                                        title="Delete document"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                </div>
                             ))
                         )}
                     </>
