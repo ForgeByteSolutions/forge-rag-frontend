@@ -33,7 +33,7 @@ export default function DashboardHome({ onUpload, uploading, sidebarOpen, onCrea
                 <div>
                     <h1 className="dh-syne dh-shimmer-text font-bold tracking-tight leading-none"
                         style={{ fontSize: 'clamp(22px, 3vw, 28px)' }}>
-                        FORGEBYTE INTELLI OCR
+                        FORGEBYTE INTELLI
                     </h1>
                     <p className="dh-dm text-[9px] font-medium text-gray-500 tracking-[.2em] uppercase mt-1">
                         Retrieval Augmented Generation
