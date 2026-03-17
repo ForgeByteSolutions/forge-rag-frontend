@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Syne, DM_Sans } from "next/font/google";
 import ChatInput from "@/components/ChatInput";
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatMessages from "@/components/chat/ChatMessages";
@@ -8,6 +9,10 @@ import ThemePickerModal from "@/components/chat/ThemePickerModal";
 import { useChat } from "@/hooks/useChat";
 import { useChatTheme } from "@/hooks/useChatTheme";
 import "@/styles/chatThemes.css";
+import "@/styles/workspace.css";
+
+const syne = Syne({ subsets: ["latin"], weight: ["600", "700", "800"], display: "swap", variable: "--font-syne" });
+const dmSans = DM_Sans({ subsets: ["latin"], weight: ["300", "400", "500", "700"], display: "swap", variable: "--font-dm" });
 
 export default function ChatBox({ selectedDocId, selectedDocName, onViewCitation, onSwitchToRisk, isCitationActive }) {
   const [model, setModel] = useState("meta-llama/Llama-3.3-70B-Instruct");
@@ -20,7 +25,7 @@ export default function ChatBox({ selectedDocId, selectedDocName, onViewCitation
   const { activeTheme, setActiveTheme } = useChatTheme();
 
   return (
-    <>
+    <div className={`${syne.variable} ${dmSans.variable} wsp-dm flex flex-col h-full relative overflow-hidden bg-[#f7f8fa]`}>
       <div
         className="flex flex-col h-full relative"
         style={{
@@ -76,6 +81,6 @@ export default function ChatBox({ selectedDocId, selectedDocName, onViewCitation
         activeTheme={activeTheme}
         setActiveTheme={setActiveTheme}
       />
-    </>
+    </div>
   );
 }

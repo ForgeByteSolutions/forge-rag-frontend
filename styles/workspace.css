@@ -306,13 +306,13 @@
         resize: none;
         border: 1.5px solid rgba(0, 0, 0, .1);
         border-radius: 12px;
-        padding: 12px 16px;
-        font-size: 14px;
+        padding: 16px 20px;
+        font-size: 16px;
         outline: none;
         font-family: var(--font-dm), sans-serif;
         transition: border-color .2s, box-shadow .2s;
-        max-height: 140px;
-        min-height: 46px;
+        max-height: 200px;
+        min-height: 56px;
         line-height: 1.5;
         background: #f9fafb;
     }
@@ -324,9 +324,9 @@
     }
 
     .wsp-send {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
         background: linear-gradient(135deg, #12b8cd, #3bb978);
         border: none;
         cursor: pointer;

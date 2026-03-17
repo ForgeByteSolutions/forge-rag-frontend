@@ -10,7 +10,8 @@ export default function DocumentList({ selectedDocId, onSelectDoc }) {
     async function fetchDocs() {
         try {
             const docs = await getDocuments();
-            setDocuments(docs || []);
+            // Only show standalone documents — workspace docs have a workspace_id set
+            setDocuments((docs || []).filter(d => !d.workspace_id));
         } catch (err) {
             console.error("Failed to fetch documents:", err);
         } finally {
@@ -26,7 +27,7 @@ export default function DocumentList({ selectedDocId, onSelectDoc }) {
         e.preventDefault();
         e.stopPropagation(); // prevent selecting the document
         if (!confirm("Are you sure you want to delete this document?")) return;
-        
+
         try {
             await deleteDocument(docId);
             if (selectedDocId === docId) onSelectDoc(null);

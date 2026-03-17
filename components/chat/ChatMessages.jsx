@@ -17,7 +17,7 @@ const ChatMessages = React.memo(function ChatMessages({
     return (
         <div
             ref={scrollRef}
-            className="flex-1 overflow-y-auto pb-40"
+            className="wsp-chat-scroll flex-1"
             style={{ position: "relative", zIndex: 1 }}
         >
             {historyLoading ? (
@@ -28,16 +28,25 @@ const ChatMessages = React.memo(function ChatMessages({
                     </div>
                 </div>
             ) : messages.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center px-6 pt-20">
-                    <h1 className="text-4xl font-bold text-gray-200 mb-8">FORGE INTELLI OCR</h1>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-xl">
-                        <div className="p-4 border border-black/10 rounded-xl hover:bg-gray-50 transition-colors cursor-default text-left">
-                            <span className="text-sm font-medium block mb-1">Upload Documents</span>
-                            <span className="text-xs text-gray-500">Add PDFs to your knowledge base to ask questions about them.</span>
-                        </div>
-                        <div className="p-4 border border-black/10 rounded-xl hover:bg-gray-50 transition-colors cursor-default text-left">
-                            <span className="text-sm text-gray-500">Select specific documents in the sidebar to narrow down your search.</span>
-                        </div>
+                <div className="wsp-chat-empty">
+                    <div style={{
+                        width: 76, height: 76, borderRadius: 22,
+                        background: "linear-gradient(135deg,rgba(18,184,205,.1),rgba(18,184,205,.22))",
+                        border: "1.5px solid rgba(18,184,205,.2)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        marginBottom: 10
+                    }}>
+                        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#12b8cd" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p className="wsp-syne" style={{ fontSize: 17, fontWeight: 700, color: "#374151", marginBottom: 6 }}>
+                            Global Intelligence
+                        </p>
+                        <p className="wsp-dm" style={{ fontSize: 13, color: "#9ca3af", maxWidth: 300, margin: '0 auto' }}>
+                            Ask questions across all your uploaded documents — I'll find insights instantly or switch to a Workspace for focus.
+                        </p>
                     </div>
                 </div>
             ) : (

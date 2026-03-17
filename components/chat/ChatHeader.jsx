@@ -16,11 +16,11 @@ export default function ChatHeader({
     const router = useRouter();
     return (
         <div style={{
-            height: 58,
-            borderBottom: "1px solid rgba(0,0,0,.08)",
+            height: 52,
+            borderBottom: "1px solid rgba(0,0,0,.07)",
             display: "flex", alignItems: "center",
             justifyContent: "space-between",
-            padding: isCitationActive ? "0 20px" : "0 20px 0 62px",
+            padding: "0 20px 0 60px",
             flexShrink: 0,
             background: activeTheme ? "rgba(255,255,255,0.75)" : "#fff",
             backdropFilter: activeTheme ? "blur(1px)" : "none",
@@ -28,54 +28,82 @@ export default function ChatHeader({
             gap: 12,
         }}>
             {/* Left: logo + doc name */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                {!isCitationActive && (
-                    <div style={{
-                        width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-                        background: "linear-gradient(135deg,#12b8cd,#3bb978)",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-                        </svg>
-                    </div>
+            <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                minWidth: 0,
+                height: "100%",
+                paddingTop: 4 // Subtle shift downwards to line up with buttons
+            }}>
+                {isCitationActive ? (
+                    <p className="wsp-syne" style={{ fontSize: 13, fontWeight: 700, color: "#374151", margin: 0 }}>📖 Citation View</p>
+                ) : (
+                    <p className="wsp-dm" style={{
+                        fontSize: 16,
+                        fontWeight: 650,
+                        color: "#334155",
+                        margin: 0,
+                        letterSpacing: "-0.01em",
+                        whiteSpace: "nowrap"
+                    }}>FORGEBYTE CHAT</p>
                 )}
-                <div style={{ minWidth: 0 }}>
-                    {!isCitationActive && (
-                        <p style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", margin: 0, lineHeight: 1.2 }}>
-                            FORGE INTELLI OCR
-                        </p>
-                    )}
-                    {selectedDocName && (
+                {selectedDocName && !isCitationActive && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#cbd5e1' }} />
                         <p style={{
-                            fontSize: isCitationActive ? 13 : 11,
-                            fontWeight: isCitationActive ? 700 : 400,
-                            color: isCitationActive ? "#0f172a" : "#94a3b8",
+                            fontSize: 12,
+                            fontWeight: 500,
+                            color: "#64748b",
                             margin: 0,
                             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                            maxWidth: isCitationActive ? 400 : 220,
+                            maxWidth: 220,
                         }}>
-                            {isCitationActive && "📖 "}
                             {selectedDocName}
                         </p>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
 
             {/* Right: controls */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                {/* Dashboard button */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+                {/* Themes button (Compact) */}
                 <button
-                    onClick={() => router.push("/dashboard")}
-                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg border border-cyan-500/20 bg-cyan-50/50 text-cyan-700 text-[13.0px] font-bold transition-all hover:bg-cyan-100/80 hover:border-cyan-500/40 hover:-translate-y-0.5 hover:shadow-sm"
-                    title="Go to Dashboard"
+                    onClick={onOpenThemes}
+                    style={{
+                        background: 'transparent', border: 'none', cursor: 'pointer',
+                        fontSize: 18, padding: 4, borderRadius: 6, display: 'flex', transition: 'background 0.2s'
+                    }}
+                    title="Change Background"
+                    onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
-                    Dashboard
+                    🎨
                 </button>
 
-                {/* Themes button */}
-                <button className="cb-themes-btn" onClick={onOpenThemes} title="Change chat background">
-                    🎨 Themes
+                <div style={{ width: 1, height: 18, background: "rgba(0,0,0,.08)" }} />
+
+                {/* Dashboard button (Workspace Style) */}
+                <button
+                    onClick={() => router.push("/dashboard")}
+                    style={{
+                        padding: "5px 14px", borderRadius: 8, border: "1.5px solid rgba(18,184,205,0.2)", cursor: "pointer",
+                        fontSize: 12, fontWeight: 700,
+                        background: "#fff",
+                        color: "#12b8cd",
+                        transition: "all .2s",
+                        fontFamily: "var(--font-syne), sans-serif"
+                    }}
+                    onMouseEnter={e => {
+                        e.currentTarget.style.background = "rgba(18,184,205,0.05)";
+                        e.currentTarget.style.borderColor = "rgba(18,184,205,0.4)";
+                    }}
+                    onMouseLeave={e => {
+                        e.currentTarget.style.background = "#fff";
+                        e.currentTarget.style.borderColor = "rgba(18,184,205,0.2)";
+                    }}
+                >
+                    Dashboard
                 </button>
 
                 <div style={{ width: 1, height: 22, background: "rgba(0,0,0,.08)" }} />

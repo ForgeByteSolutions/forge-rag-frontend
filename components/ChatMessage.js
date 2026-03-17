@@ -3,83 +3,79 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 const mdComponents = {
-    h1: ({ node, ...props }) => <h1 className="text-xl font-bold mt-5 mb-3 text-[#0f172a]" {...props} />,
-    h2: ({ node, ...props }) => <h2 className="text-lg font-bold mt-4 mb-2 text-[#0f172a]" {...props} />,
-    h3: ({ node, ...props }) => <h3 className="text-md font-bold mt-3 mb-2 text-[#0f172a]" {...props} />,
-    p: ({ node, ...props }) => <p className="mb-3 last:mb-0 text-gray-800 leading-relaxed" {...props} />,
-    ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-3 space-y-1 text-gray-800" {...props} />,
-    ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-3 space-y-1 text-gray-800" {...props} />,
-    li: ({ node, ...props }) => <li className="" {...props} />,
-    strong: ({ node, ...props }) => <strong className="font-semibold text-[#0f172a]" {...props} />,
-    code: ({ node, inline, ...props }) =>
-        inline ? <code className="bg-gray-100 rounded px-1.5 py-0.5 text-[0.85em] font-mono text-pink-600" {...props} />
-            : <code className="block bg-gray-100 p-3 rounded-md my-3 text-[0.85em] font-mono text-gray-800 overflow-x-auto border border-gray-200" {...props} />,
-    blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-[#12b8cd] pl-3 italic text-gray-600 my-3" {...props} />,
+    h1: ({ node, ...props }) => <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '1rem 0 0.5rem', color: '#111827' }} {...props} />,
+    h2: ({ node, ...props }) => <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0.8rem 0 0.4rem', color: '#111827' }} {...props} />,
+    h3: ({ node, ...props }) => <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '0.6rem 0 0.3rem', color: '#111827' }} {...props} />,
+    p: ({ node, ...props }) => <p style={{ margin: '0 0 0.8rem 0', lineHeight: 1.6 }} className="last:mb-0" {...props} />,
+    ul: ({ node, ...props }) => <ul style={{ margin: '0 0 0.8rem 0', paddingLeft: '1.5rem', listStyleType: 'disc' }} {...props} />,
+    ol: ({ node, ...props }) => <ol style={{ margin: '0 0 0.8rem 0', paddingLeft: '1.5rem', listStyleType: 'decimal' }} {...props} />,
+    li: ({ node, ...props }) => <li style={{ marginBottom: '0.25rem' }} {...props} />,
+    strong: ({ node, ...props }) => <strong style={{ fontWeight: 600, color: '#111827' }} {...props} />,
+    blockquote: ({ node, ...props }) => <blockquote style={{ borderLeft: '3px solid #12b8cd', paddingLeft: '0.75rem', margin: '0.5rem 0 0.8rem', color: '#4b5563', fontStyle: 'italic' }} {...props} />,
+    code: ({ node, inline, ...props }) => inline
+        ? <code style={{ background: '#f3f4f6', padding: '0.15rem 0.35rem', borderRadius: '4px', fontSize: '0.85em', fontFamily: 'monospace', color: '#db2777' }} {...props} />
+        : <code style={{ display: 'block', background: '#f3f4f6', padding: '0.75rem', borderRadius: '8px', margin: '0.5rem 0 0.8rem', fontSize: '0.85em', fontFamily: 'monospace', overflowX: 'auto', border: '1px solid #e5e7eb' }} {...props} />,
 };
 
 export default function ChatMessage({ message, onViewCitation, themed }) {
     const isAi = message.type === "ai";
 
     return (
-        <div
-            className={`w-full py-8 border-b border-black/10`}
-            style={{
-                background: themed
-                    ? (isAi ? "rgba(240,250,252,0.55)" : "rgba(255,255,255,0.38)")
-                    : (isAi ? "#f9fafb" : "#ffffff"),
-            }}
-        >
-            <div className="max-w-2xl mx-auto px-4 flex gap-4 md:gap-6">
-                {/* Avatar */}
-                <div className={`h-8 w-8 shrink-0 rounded flex items-center justify-center text-white text-xs font-bold ${isAi ? "bg-[#12b8cd]" : "bg-[#5436da]"}`}>
-                    {isAi ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5153-4.9108 6.0462 6.0462 0 0 0-4.7443-3.2243 6.072 6.072 0 0 0-5.2922 1.4286 6.0586 6.0586 0 0 0-5.6074 1.7014 6.0456 6.0456 0 0 0-2.0358 4.8895 6.0437 6.0437 0 0 0 2.1285 5.4671 5.981 5.981 0 0 0 .515 4.9103 6.0462 6.0462 0 0 0 4.743 3.2243 6.072 6.072 0 0 0 5.2925-1.4289 6.0581 6.0581 0 0 0 5.6071-1.7014 6.0456 6.0456 0 0 0 2.0358-4.8892 6.0423 6.0423 0 0 0-2.127-5.4668ZM18.3307 15.5561a1.2149 1.2149 0 0 1-1.807 1.2827 4.8569 4.8569 0 0 0-2.6846-.794 4.8465 4.8465 0 0 0-4.8447 4.8469c0 1.5639.76 3.0127 2.0496 3.9014a1.2152 1.2152 0 0 1-.678 2.2244 1.2154 1.2154 0 0 1-1.2154-1.2154c0-2.4855-2.0145-4.5-4.5-4.5a1.2152 1.2152 0 1 1 0-2.4304c1.5364 0 2.9608-.7712 3.826-2.0645a1.2151 1.2151 0 0 1 2.0464 1.3407 4.8569 4.8569 0 0 0 .7942 2.6843 4.8465 4.8465 0 0 0 4.8446-4.8469c0-1.5639-.76-3.0127-2.0496-3.9014a1.2152 1.2152 0 1 1 1.3561-2.009 6.07 6.07 0 0 0 1.6214 2.8943Z" />
+        <div className={`wsp-msg ${isAi ? "ai" : "user"}`} style={{ 
+            marginTop: 16, 
+            marginBottom: 16,
+            marginLeft: isAi ? 24 : "auto",
+            marginRight: isAi ? "auto" : 24,
+            maxWidth: "85%"
+        }}>
+            {isAi ? (
+                <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                    <div style={{
+                        width: 30, height: 30, borderRadius: 9, flexShrink: 0,
+                        background: "linear-gradient(135deg,#12b8cd,#3bb978)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        marginTop: 2
+                    }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 2a10 10 0 110 20A10 10 0 0112 2z" />
+                            <path d="M12 8v4l2 2" />
                         </svg>
-                    ) : "Y"}
-                </div>
+                    </div>
+                    <div className="wsp-bubble-ai wsp-dm" style={{ position: "relative", flex: 1 }}>
+                        {!message.content ? <ThinkingLoader /> : (
+                            <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+                                {message.content}
+                            </ReactMarkdown>
+                        )}
 
-                {/* Content */}
-                <div className="flex-1 space-y-4">
-                    <div className="prose prose-base max-w-none text-gray-800 leading-relaxed">
-                        {isAi && !message.content ? <ThinkingLoader /> : (
-                            isAi ? (
-                                <ReactMarkdown
-                                    remarkPlugins={[remarkGfm]}
-                                    components={mdComponents}
-                                >
-                                    {message.content}
-                                </ReactMarkdown>
-                            ) : (
-                                <div className="whitespace-pre-wrap">{message.content}</div>
-                            )
+                        {/* Citations */}
+                        {message.citations && message.citations.length > 0 && (
+                            <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(0,0,0,.05)", display: "flex", flexWrap: "wrap", gap: 8 }}>
+                                {message.citations.map((cite, idx) => (
+                                    <div
+                                        key={idx}
+                                        title={cite.snippet}
+                                        style={{
+                                            padding: "4px 10px", background: "#f8fafc", border: "1px solid #e2e8f0",
+                                            borderRadius: 6, fontSize: 11, fontWeight: 600, color: "#64748b",
+                                            display: "flex", alignItems: "center", gap: 6,
+                                            cursor: "help", transition: "all .2s"
+                                        }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#12b8cd"; e.currentTarget.style.background = "#fff"; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e2e8f0"; e.currentTarget.style.background = "#f8fafc"; }}
+                                        onClick={() => onViewCitation?.(cite)}
+                                    >
+                                        <span style={{ fontSize: 13 }}>📄</span>
+                                        <span>{cite.source} (p.{cite.page})</span>
+                                    </div>
+                                ))}
+                            </div>
                         )}
                     </div>
-
-                    {/* Citations */}
-                    {message.citations && message.citations.length > 0 && (
-                        <div className="mt-4 pt-4 border-t border-black/5 flex flex-wrap gap-2">
-                            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider w-full mb-1">
-                                Sources
-                            </span>
-                            {message.citations.map((cite, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => onViewCitation?.(cite)}
-                                    className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-[10px] text-gray-600 transition-colors cursor-pointer border border-black/5 flex items-center gap-1.5"
-                                    title={cite.snippet}
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                    <span>{cite.source} (p.{cite.page})</span>
-                                </button>
-                            ))}
-                        </div>
-                    )}
                 </div>
-            </div>
+            ) : (
+                <div className="wsp-bubble-user wsp-dm">{message.content}</div>
+            )}
         </div>
     );
 }
