@@ -14,7 +14,6 @@ export function useUploadDocument({ onSuccess, router }) {
     const executeUpload = async (file, ocrEngine) => {
         try {
             setUploading(true);
-            setUploading(true);
             const data = await uploadDocument(file, ocrEngine);
             const newDocId = data.doc_id || data.id;
             if (!newDocId) throw new Error("No doc id returned");
@@ -35,6 +34,12 @@ export function useUploadDocument({ onSuccess, router }) {
     const handleFileUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
+        
+        if (file.size > 50 * 1024 * 1024) {
+            alert("❌ File too large. Max 50MB allowed.");
+            return;
+        }
+
         const ext = file.name.split(".").pop().toLowerCase();
         if (!["pdf", "docx", "txt", "csv", "xlsx", "xls", "png", "jpg", "jpeg", "gif", "webp", "jfif"].includes(ext)) {
             alert("❌ Invalid file type!"); return;

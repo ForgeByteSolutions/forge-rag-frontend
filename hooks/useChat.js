@@ -32,6 +32,10 @@ export function useChat(selectedDocId, model) {
     // Load history whenever the selected doc changes
     useEffect(() => {
         async function loadHistory() {
+            if (!selectedDocId) {
+                setMessages([]);
+                return;
+            }
             try {
                 setHistoryLoading(true);
                 const data = await getChatHistory(selectedDocId);
