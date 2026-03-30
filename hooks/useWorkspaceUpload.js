@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { uploadDocumentToWorkspace } from "@/lib/api";
+import { uploadDocumentToWorkspace, getDocumentStatus } from "@/lib/api";
 
 /**
  * Handles file selection, OCR detection, and upload queue.
@@ -29,6 +29,27 @@ export function useWorkspaceUpload({ workspaceId, onUploadSuccess, onContractDet
         setUploadedFiles(prev => prev.map(f => f.id === entry.id ? { ...f, status: "uploading" } : f));
         try {
             const result = await uploadDocumentToWorkspace(entry.file, workspaceId, entry.ocr_engine);
+            const newDocId = result?.doc_id || result?.id;
+            
+            if (newDocId) {
+                // Poll backend every 3 seconds to wait for BackgroundTask to finish
+                let isDone = false;
+                while (!isDone) {
+                    await new Promise(r => setTimeout(r, 3000));
+                    try {
+                        const statusData = await getDocumentStatus(newDocId);
+                        if (statusData.status === "completed" || statusData.status === "failed") {
+                            isDone = true;
+                            if (statusData.status === "failed") {
+                                throw new Error("Document processing failed on server.");
+                            }
+                        }
+                    } catch (e) {
+                        console.log("Polling error (might be momentary):", e);
+                    }
+                }
+            }
+
             setUploadedFiles(prev => prev.map(f => f.id === entry.id ? { ...f, status: "done", result } : f));
             setTimeout(() => {
                 setUploadedFiles(prev => prev.filter(f => f.id !== entry.id));

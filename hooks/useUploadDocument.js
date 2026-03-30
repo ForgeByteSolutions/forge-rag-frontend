@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { uploadDocument } from "@/lib/api";
+import { uploadDocument, getDocumentStatus } from "@/lib/api";
 
 /**
  * Handles file upload with OCR detection.
@@ -17,6 +17,24 @@ export function useUploadDocument({ onSuccess, router }) {
             const data = await uploadDocument(file, ocrEngine);
             const newDocId = data.doc_id || data.id;
             if (!newDocId) throw new Error("No doc id returned");
+            
+            // Poll the backend every 3 seconds until the BackgroundTask finishes
+            let isDone = false;
+            while (!isDone) {
+                await new Promise(r => setTimeout(r, 3000));
+                try {
+                    const statusData = await getDocumentStatus(newDocId);
+                    if (statusData.status === "completed" || statusData.status === "failed") {
+                        isDone = true;
+                        if (statusData.status === "failed") {
+                            throw new Error("Document processing failed on server.");
+                        }
+                    }
+                } catch (e) {
+                    console.log("Polling error (might be momentary):", e);
+                }
+            }
+
             if (onSuccess) onSuccess();
             if (data.is_contract) {
                 router.push(`/dashboard/${newDocId}?tab=choice`);
