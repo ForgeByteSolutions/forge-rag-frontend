@@ -90,6 +90,7 @@ export default function WorkspacePage() {
                     onFilePick={handleFilePick}
                     onDrop={handleDrop}
                     onRiskClick={handleDocRiskClick}
+                    onDeleteSuccess={() => setDocsRefreshKey(k => k + 1)}
                 />
 
                 {/* Right: Chat / Risk Panel */}

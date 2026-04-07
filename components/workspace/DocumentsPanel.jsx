@@ -1,6 +1,9 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import toast from "react-hot-toast";
+import { deleteDocument } from "@/lib/api";
+import DeleteConfirmModal from "@/components/DeleteConfirmModal";
 import "@/styles/workspace.css";
 
 const FILE_ICONS = {
@@ -41,10 +44,37 @@ export default function DocumentsPanel({
     onFilePick,
     onDrop,
     onRiskClick,
+    onDeleteSuccess,
 }) {
     const fileInputRef = useRef(null);
+    const [documentToDelete, setDocumentToDelete] = useState(null);
+    const [deletingDocId, setDeletingDocId] = useState(null);
     const allDocs = workspaceDocs;
     const hasDocuments = allDocs.length > 0 || uploadedFiles.length > 0;
+
+    const handleConfirmDelete = async () => {
+        if (!documentToDelete) return;
+        const docId = documentToDelete.id;
+        setDocumentToDelete(null);
+        setDeletingDocId(docId);
+
+        try {
+            await deleteDocument(docId);
+            if (onDeleteSuccess) onDeleteSuccess();
+            toast.success("Document deleted successfully");
+            // If it was selected, remove it from selection
+            if (selectedDocIds.has(docId)) {
+                const newSet = new Set(selectedDocIds);
+                newSet.delete(docId);
+                setSelectedDocIds(newSet);
+            }
+        } catch (err) {
+            console.error("Failed to delete document", err);
+            toast.error("Failed to delete document");
+        } finally {
+            setDeletingDocId(null);
+        }
+    };
 
     return (
         <div className="wsp-left">
@@ -164,6 +194,25 @@ export default function DocumentsPanel({
                                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                                 </svg>
                             </button>
+
+                            {/* Delete button (like general chat) */}
+                            {deletingDocId === doc.id ? (
+                                <div className="p-1 flex-shrink-0" style={{ marginLeft: 6, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                    <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid #e5e7eb", borderTopColor: "#ef4444", animation: "wsp-spin 0.8s linear infinite" }} />
+                                </div>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); setDocumentToDelete(doc); }}
+                                    className="p-1 text-gray-400 hover:text-red-400 transition-opacity flex-shrink-0"
+                                    style={{ marginLeft: 6, background: "transparent", border: "none", cursor: "pointer" }}
+                                    title="Delete document"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            )}
                         </div>
                     );
                 })}
@@ -174,6 +223,14 @@ export default function DocumentsPanel({
                     </div>
                 )}
             </div>
+
+            <DeleteConfirmModal
+                isOpen={!!documentToDelete}
+                onClose={() => setDocumentToDelete(null)}
+                onConfirm={handleConfirmDelete}
+                title="Delete Document"
+                message={`Are you sure you want to delete "${documentToDelete?.filename}"? This action cannot be undone.`}
+            />
         </div>
     );
 }

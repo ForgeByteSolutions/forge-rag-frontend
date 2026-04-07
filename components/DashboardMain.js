@@ -101,6 +101,8 @@ export default function DashboardMain() {
                         selectedDocId={selectedDoc?.id || null}
                         onSelectDoc={handleSelectDoc}
                         onUploadSuccess={() => setRefreshSidebar(prev => prev + 1)}
+                        onUpload={handleFileUpload}
+                        uploading={uploading}
                     />
                 </div>
             </div>
