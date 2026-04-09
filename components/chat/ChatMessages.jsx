@@ -13,6 +13,8 @@ const ChatMessages = React.memo(function ChatMessages({
     onViewCitation,
     activeTheme,
     scrollRef,
+    onFeedback,
+    onRunEval,
 }) {
     return (
         <div
@@ -56,6 +58,8 @@ const ChatMessages = React.memo(function ChatMessages({
                         message={m}
                         onViewCitation={onViewCitation}
                         themed={!!activeTheme}
+                        onFeedback={onFeedback}
+                        onRunEval={onRunEval}
                     />
                 ))
             )}

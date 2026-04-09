@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { getChatHistory, streamChat } from "@/lib/api";
+import { getChatHistory, streamChat, submitChatFeedback, runManualEvaluation } from "@/lib/api";
 
 /**
  * Manages workspace chat: history loading, streaming, model selection.
@@ -36,11 +36,12 @@ export function useWorkspaceChat(workspaceId) {
             .then(data => {
                 const history = data?.history || [];
                 if (history.length > 0) {
-                    setMessages(history.map((msg, i) => ({
-                        id: i,
+                    setMessages(history.map((msg) => ({
+                        id: msg.id,
                         role: ["user", "human"].includes(msg.role) ? "user" : "ai",
                         content: msg.content,
                         citations: msg.citations || [],
+                        user_feedback: msg.user_feedback,
                         streaming: false,
                     })));
                 }
@@ -84,6 +85,13 @@ export function useWorkspaceChat(workspaceId) {
                         m.id === aiMsgId ? { ...m, citations: cites } : m
                     ));
                 },
+                onEnd: (endPayload) => {
+                    if (endPayload?.message_id) {
+                        setMessages(prev => prev.map(m =>
+                            m.id === aiMsgId ? { ...m, id: endPayload.message_id, streaming: false } : m
+                        ));
+                    }
+                },
             });
         } catch (err) {
             if (err.name === "AbortError") return;
@@ -99,5 +107,23 @@ export function useWorkspaceChat(workspaceId) {
         }
     };
 
-    return { messages, question, setQuestion, streaming, model, setModel, handleSend, chatScrollRef };
+    const handleFeedback = async (messageId, feedbackText) => {
+        try {
+            await import("@/lib/api").then(m => m.submitChatFeedback(messageId, feedbackText));
+            setMessages(prev => prev.map(m => m.id === messageId ? { ...m, user_feedback: feedbackText } : m));
+        } catch (err) {
+            console.error("Failed to submit feedback", err);
+        }
+    };
+
+    const handleRunEval = async (messageId) => {
+        try {
+            await runManualEvaluation(messageId);
+        } catch (err) {
+            console.error("Failed to run evaluation", err);
+            throw err;
+        }
+    };
+
+    return { messages, question, setQuestion, streaming, model, setModel, handleSend, handleFeedback, handleRunEval, chatScrollRef };
 }

@@ -12,6 +12,7 @@ export default function ChatHeader({
     onOpenThemes,
     onSwitchToRisk,
     selectedDocId,
+    onOpenEval,
 }) {
     const router = useRouter();
     return (
@@ -142,6 +143,41 @@ export default function ChatHeader({
                         </svg>
                         Risk Analysis
                     </button>
+                )}
+
+                {/* Evals button */}
+                {selectedDocId && (
+                    <>
+                        <div style={{ width: 1, height: 22, background: "rgba(0,0,0,.08)" }} />
+                        <button
+                            onClick={onOpenEval}
+                            style={{
+                                display: "flex", alignItems: "center", gap: 5,
+                                padding: "6px 13px",
+                                background: "#f0f9ff",
+                                color: "#0369a1",
+                                border: "1.5px solid rgba(18,184,205,0.3)",
+                                borderRadius: 9,
+                                fontSize: 12, fontWeight: 700,
+                                cursor: "pointer",
+                                whiteSpace: "nowrap",
+                                transition: "all .15s",
+                            }}
+                            onMouseEnter={e => {
+                                e.currentTarget.style.background = "rgba(18,184,205,0.1)";
+                                e.currentTarget.style.borderColor = "rgba(18,184,205,0.5)";
+                                e.currentTarget.style.transform = "translateY(-1px)";
+                            }}
+                            onMouseLeave={e => {
+                                e.currentTarget.style.background = "#f0f9ff";
+                                e.currentTarget.style.borderColor = "rgba(18,184,205,0.3)";
+                                e.currentTarget.style.transform = "";
+                            }}
+                        >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h4l3-9 5 18 3-9h5"/></svg>
+                            Evals
+                        </button>
+                    </>
                 )}
 
                 <div style={{ width: 1, height: 22, background: "rgba(0,0,0,.08)" }} />

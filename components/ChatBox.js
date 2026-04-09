@@ -6,6 +6,7 @@ import ChatInput from "@/components/ChatInput";
 import ChatHeader from "@/components/chat/ChatHeader";
 import ChatMessages from "@/components/chat/ChatMessages";
 import ThemePickerModal from "@/components/chat/ThemePickerModal";
+import EvaluationSidePanel from "@/components/evaluation/EvaluationSidePanel";
 import { useChat } from "@/hooks/useChat";
 import { useChatTheme } from "@/hooks/useChatTheme";
 import "@/styles/chatThemes.css";
@@ -17,9 +18,10 @@ const dmSans = DM_Sans({ subsets: ["latin"], weight: ["300", "400", "500", "700"
 export default function ChatBox({ selectedDocId, selectedDocName, onViewCitation, onSwitchToRisk, isCitationActive }) {
   const [model, setModel] = useState("meta-llama/Llama-3.3-70B-Instruct");
   const [openThemes, setOpenThemes] = useState(false);
+  const [evalPanelOpen, setEvalPanelOpen] = useState(false);
 
   // — Chat engine —
-  const { messages, loading, historyLoading, sendMessage, scrollRef } = useChat(selectedDocId, model);
+  const { messages, loading, historyLoading, sendMessage, scrollRef, handleFeedback, handleRunEval } = useChat(selectedDocId, model);
 
   // — Theme system —
   const { activeTheme, setActiveTheme } = useChatTheme();
@@ -52,6 +54,7 @@ export default function ChatBox({ selectedDocId, selectedDocName, onViewCitation
           activeTheme={activeTheme}
           onOpenThemes={() => setOpenThemes(true)}
           onSwitchToRisk={onSwitchToRisk}
+          onOpenEval={() => setEvalPanelOpen(true)}
         />
 
         {/* Messages */}
@@ -61,6 +64,8 @@ export default function ChatBox({ selectedDocId, selectedDocName, onViewCitation
           onViewCitation={onViewCitation}
           activeTheme={activeTheme}
           scrollRef={scrollRef}
+          onFeedback={handleFeedback}
+          onRunEval={handleRunEval}
         />
 
         {/* Input */}
@@ -80,6 +85,13 @@ export default function ChatBox({ selectedDocId, selectedDocName, onViewCitation
         onClose={() => setOpenThemes(false)}
         activeTheme={activeTheme}
         setActiveTheme={setActiveTheme}
+      />
+
+      {/* Evaluation Side Panel */}
+      <EvaluationSidePanel
+        open={evalPanelOpen}
+        onClose={() => setEvalPanelOpen(false)}
+        docId={selectedDocId}
       />
     </div>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState } from "react";
 import { useParams } from "next/navigation";
 import { Syne, DM_Sans } from "next/font/google";
 
@@ -10,6 +11,7 @@ import ChatPanel from "@/components/workspace/ChatPanel";
 import RiskPanelContainer from "@/components/workspace/RiskPanelContainer";
 import ContractPromptModal from "@/components/workspace/ContractPromptModal";
 import OcrModal from "@/components/workspace/OcrModal";
+import EvaluationSidePanel from "@/components/evaluation/EvaluationSidePanel";
 
 // Hooks
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -59,7 +61,10 @@ export default function WorkspacePage() {
     });
 
     // — Chat —
-    const { messages, question, setQuestion, streaming, model, setModel, handleSend } = useWorkspaceChat(workspaceId);
+    const { messages, question, setQuestion, streaming, model, setModel, handleSend, handleFeedback, handleRunEval } = useWorkspaceChat(workspaceId);
+
+    // — Evaluation —
+    const [evalPanelOpen, setEvalPanelOpen] = useState(false);
 
     const contractDocs = Object.entries(riskMap);
     const hasRisk = contractDocs.length > 0;
@@ -150,19 +155,32 @@ export default function WorkspacePage() {
                         ) : (
                             <p className="wsp-syne" style={{ fontSize: 13, fontWeight: 700, color: "#374151", letterSpacing: ".03em" }}>Workspace Chat</p>
                         )}
-
-                        <select
-                            value={model}
-                            onChange={(e) => setModel(e.target.value)}
-                            style={{
-                                fontSize: 12, border: "1.5px solid rgba(0,0,0,.1)", borderRadius: 8,
-                                padding: "5px 10px", background: "#fff", outline: "none",
-                                fontFamily: "var(--font-dm), sans-serif", color: "#374151", cursor: "pointer",
-                            }}
-                        >
-                            <option value="meta-llama/Llama-3.3-70B-Instruct">Llama 3.3 70B (Free)</option>
-                            <option value="gpt-4o-mini">GPT-4o Mini (Paid)</option>
-                        </select>
+                        
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <button
+                                onClick={() => setEvalPanelOpen(true)}
+                                style={{
+                                    fontSize: 12, border: "1.5px solid rgba(18,184,205,.3)", borderRadius: 8,
+                                    padding: "5px 10px", background: "#f8fafc", color: "#12b8cd", fontWeight: 700, cursor: "pointer",
+                                    display: "flex", alignItems: "center", gap: 6
+                                }}
+                            >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h4l3-9 5 18 3-9h5"/></svg>
+                                Evals
+                            </button>
+                            <select
+                                value={model}
+                                onChange={(e) => setModel(e.target.value)}
+                                style={{
+                                    fontSize: 12, border: "1.5px solid rgba(0,0,0,.1)", borderRadius: 8,
+                                    padding: "5px 10px", background: "#fff", outline: "none",
+                                    fontFamily: "var(--font-dm), sans-serif", color: "#374151", cursor: "pointer",
+                                }}
+                            >
+                                <option value="meta-llama/Llama-3.3-70B-Instruct">Llama 3.3 70B (Free)</option>
+                                <option value="gpt-4o-mini">GPT-4o Mini (Paid)</option>
+                            </select>
+                        </div>
                     </div>
 
                     {/* Risk tab content */}
@@ -185,8 +203,18 @@ export default function WorkspacePage() {
                             onSend={() => handleSend(selectedDocIds)}
                             hasDocuments={hasDocuments}
                             selectedDocIds={selectedDocIds}
+                            onFeedback={handleFeedback}
+                            onRunEval={handleRunEval}
                         />
                     )}
+
+                    {/* Evaluation Side Panel */}
+                    <EvaluationSidePanel
+                        open={evalPanelOpen}
+                        onClose={() => setEvalPanelOpen(false)}
+                        workspaceId={workspaceId}
+                        docId={selectedDocIds?.size === 1 ? Array.from(selectedDocIds)[0] : null}
+                    />
                 </div>
             </div>
 

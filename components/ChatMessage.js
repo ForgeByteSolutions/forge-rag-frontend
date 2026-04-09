@@ -1,3 +1,4 @@
+import { useState } from "react";
 import ThinkingLoader from "./ThinkingLoader";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -17,8 +18,29 @@ const mdComponents = {
         : <code style={{ display: 'block', background: '#f3f4f6', padding: '0.75rem', borderRadius: '8px', margin: '0.5rem 0 0.8rem', fontSize: '0.85em', fontFamily: 'monospace', overflowX: 'auto', border: '1px solid #e5e7eb' }} {...props} />,
 };
 
-export default function ChatMessage({ message, onViewCitation, themed }) {
-    const isAi = message.type === "ai";
+export default function ChatMessage({ message, onViewCitation, themed, onFeedback, onRunEval }) {
+  const [evalLoading, setEvalLoading] = useState(false);
+  const [evalDone, setEvalDone] = useState(false);
+  const isAi = message.type === "ai";
+
+  // Only real DB UUIDs (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) can be evaluated.
+  // Temporary IDs (Date.now() numbers) don't exist in the DB yet.
+  const isRealId = typeof message.id === "string" && /^[0-9a-f-]{36}$/i.test(message.id);
+
+  const handleEval = async () => {
+    if (!isRealId || evalLoading) return;
+    console.log("[Eval] Running eval for message id:", message.id);
+    setEvalLoading(true);
+    try {
+      await onRunEval?.(message.id);
+      setEvalDone(true);
+      setTimeout(() => setEvalDone(false), 4000);
+    } catch (err) {
+      console.error("[Eval] Failed:", err?.response?.data?.detail || err.message);
+    } finally {
+      setEvalLoading(false);
+    }
+  };
 
     return (
         <div className={`wsp-msg ${isAi ? "ai" : "user"}`} style={{ 
@@ -71,7 +93,57 @@ export default function ChatMessage({ message, onViewCitation, themed }) {
                                 ))}
                             </div>
                         )}
+                        
+                        {/* Feedback Actions */}
+                        {message.id && (
+                            <div style={{ marginTop: 12, display: "flex", gap: 6, justifyContent: "flex-end", alignItems: "center" }}>
+                                {/* Run Eval button — only clickable once backend UUID is assigned */}
+                                {!message.feedback_submitted && (
+                                    <button
+                                        onClick={handleEval}
+                                        disabled={evalLoading || evalDone || !isRealId}
+                                        title={!isRealId ? "Waiting for message to be saved..." : "Run RAG evaluation on this response"}
+                                        style={{
+                                            background: evalDone ? "#f0fdf4" : "transparent",
+                                            border: evalDone ? "1px solid #86efac" : "1px solid rgba(0,0,0,0.08)",
+                                            cursor: (!isRealId || evalLoading || evalDone) ? "not-allowed" : "pointer",
+                                            padding: "3px 8px", borderRadius: 6,
+                                            fontSize: 11, fontWeight: 700,
+                                            color: evalDone ? "#3bb978" : !isRealId ? "#d1d5db" : "#94a3b8",
+                                            display: "flex", alignItems: "center", gap: 4,
+                                            opacity: !isRealId ? 0.4 : 1,
+                                            transition: "all .2s"
+                                        }}
+                                    >
+                                        {evalLoading ? (
+                                            <div style={{ width: 10, height: 10, border: "1.5px solid #94a3b8", borderTopColor: "transparent", borderRadius: "50%", animation: "wsp-spin 0.8s linear infinite" }} />
+                                        ) : evalDone ? (
+                                            <> ✓ Evaluated </>
+                                        ) : (
+                                            <> ⚡ Eval </>
+                                        )}
+                                    </button>
+                                )}
+                                {/* Thumbs Up */}
+                                <button
+                                    onClick={() => onFeedback?.(message.id, '1')}
+                                    style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4 }}
+                                    title="Good response"
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill={message.user_feedback === '1' ? "#3bb978" : "none"} stroke={message.user_feedback === '1' ? "#3bb978" : "#94a3b8"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                                </button>
+                                {/* Thumbs Down */}
+                                <button
+                                    onClick={() => onFeedback?.(message.id, '-1')}
+                                    style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4 }}
+                                    title="Bad response"
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill={message.user_feedback === '-1' ? "#ef4444" : "none"} stroke={message.user_feedback === '-1' ? "#ef4444" : "#94a3b8"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"></path></svg>
+                                </button>
+                            </div>
+                        )}
                     </div>
+
                 </div>
             ) : (
                 <div className="wsp-bubble-user wsp-dm">{message.content}</div>

@@ -28,6 +28,8 @@ export default function ChatPanel({
     onSend,
     hasDocuments,
     selectedDocIds,
+    onFeedback,
+    onRunEval,
 }) {
     const chatScrollRef = useRef(null);
 
@@ -125,6 +127,44 @@ export default function ChatPanel({
 
                                         {msg.streaming && (
                                             <span style={{ display: "inline-block", width: 8, height: 16, background: "#12b8cd", borderRadius: 2, marginLeft: 2, animation: "wsp-pulse 1s infinite", verticalAlign: "middle" }} />
+                                        )}
+
+                                        {/* Actions Footer */}
+                                        {!msg.streaming && msg.id && (
+                                            <div style={{ marginTop: 12, display: "flex", gap: 6, justifyContent: "flex-end", alignItems: "center" }}>
+                                                {/* ⚡ Eval button */}
+                                                <button
+                                                    onClick={() => onRunEval?.(msg.id)}
+                                                    title="Run RAG evaluation on this response"
+                                                    style={{
+                                                        background: "transparent",
+                                                        border: "1px solid rgba(0,0,0,0.08)",
+                                                        cursor: "pointer",
+                                                        padding: "3px 8px", borderRadius: 6,
+                                                        fontSize: 11, fontWeight: 700,
+                                                        color: "#94a3b8",
+                                                        display: "flex", alignItems: "center", gap: 4,
+                                                    }}
+                                                >
+                                                    ⚡ Eval
+                                                </button>
+                                                {/* Thumbs Up */}
+                                                <button
+                                                    onClick={() => onFeedback?.(msg.id, '1')}
+                                                    style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4 }}
+                                                    title="Good response"
+                                                >
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill={msg.user_feedback === '1' ? "#3bb978" : "none"} stroke={msg.user_feedback === '1' ? "#3bb978" : "#94a3b8"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                                                </button>
+                                                {/* Thumbs Down */}
+                                                <button
+                                                    onClick={() => onFeedback?.(msg.id, '-1')}
+                                                    style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4 }}
+                                                    title="Bad response"
+                                                >
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill={msg.user_feedback === '-1' ? "#ef4444" : "none"} stroke={msg.user_feedback === '-1' ? "#ef4444" : "#94a3b8"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"></path></svg>
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
                                 </div>

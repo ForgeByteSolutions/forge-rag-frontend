@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { streamChat, getChatHistory } from "@/lib/api";
+import { streamChat, getChatHistory, submitChatFeedback, runManualEvaluation } from "@/lib/api";
 
 /**
  * Encapsulates all chat logic: history loading, streaming, and message state.
@@ -40,10 +40,12 @@ export function useChat(selectedDocId, model) {
                 setHistoryLoading(true);
                 const data = await getChatHistory(selectedDocId);
                 const history = (data.history || []).map((msg, idx) => ({
-                    id: `hist-${idx}`,
+                    id: msg.id || `hist-${idx}`,
                     type: msg.role,
                     content: msg.content,
                     citations: msg.citations,
+                    user_feedback: msg.user_feedback,
+                    feedback_submitted: !!msg.user_feedback
                 }));
                 setMessages(history);
             } catch (err) {
@@ -93,6 +95,13 @@ export function useChat(selectedDocId, model) {
                         prev.map(m => m.id === aiMsgId ? { ...m, citations: cites } : m)
                     );
                 },
+                onEnd: (endPayload) => {
+                    if (endPayload?.message_id) {
+                        setMessages(prev => prev.map(m =>
+                            m.id === aiMsgId ? { ...m, id: endPayload.message_id, streaming: false } : m
+                        ));
+                    }
+                },
             });
         } catch (err) {
             if (err.name === "AbortError") return;
@@ -109,5 +118,23 @@ export function useChat(selectedDocId, model) {
         }
     }, [selectedDocId, model]);
 
-    return { messages, loading, historyLoading, sendMessage, scrollRef };
+    const handleFeedback = useCallback(async (messageId, score) => {
+        try {
+            await submitChatFeedback(messageId, score);
+            setMessages(prev => prev.map(m => m.id === messageId ? { ...m, user_feedback: score, feedback_submitted: true } : m));
+        } catch (err) {
+            console.error("Failed to submit feedback", err);
+        }
+    }, []);
+
+    const handleRunEval = useCallback(async (messageId) => {
+        try {
+            await runManualEvaluation(messageId);
+        } catch (err) {
+            console.error("Failed to run evaluation", err);
+            throw err;
+        }
+    }, []);
+
+    return { messages, loading, historyLoading, sendMessage, scrollRef, handleFeedback, handleRunEval };
 }

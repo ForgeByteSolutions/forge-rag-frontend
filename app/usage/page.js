@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getToken } from "@/lib/auth";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { BrainCircuit, FileText, Database, Puzzle, Search } from "lucide-react";
+import EvaluationDashboard from "@/components/evaluation/EvaluationDashboard";
 
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
@@ -190,9 +191,47 @@ function UsageChart() {
   );
 }
 
+import { getEvaluationMetrics } from "@/lib/api";
+
+function EvaluationChart({ metrics }) {
+  if (!metrics || metrics.length === 0) return null;
+  const avgFaithfulness = metrics.reduce((a, b) => a + (b.faithfulness || 0), 0) / metrics.length;
+  const avgRelevance = metrics.reduce((a, b) => a + (b.answer_relevance || 0), 0) / metrics.length;
+  const avgPrecision = metrics.reduce((a, b) => a + (b.context_precision || 0), 0) / metrics.length;
+
+  return (
+    <div className="glass-card" style={{ padding: "24px 32px" }}>
+      <h3 style={{ fontSize: 18, fontWeight: 800, color: "#1e293b", margin: 0 }}>RAG Quality Evaluation</h3>
+      <p style={{ fontSize: 13, color: "#64748b", marginTop: 4, marginBottom: 20 }}>LLM-as-a-judge score averages</p>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        {[
+          { label: "Faithfulness", val: avgFaithfulness, color: "#3bb978", desc: "No hallucinations" },
+          { label: "Relevance", val: avgRelevance, color: "#3b82f6", desc: "Answers the prompt correctly" },
+          { label: "Precision", val: avgPrecision, color: "#8b5cf6", desc: "Useful context retrieved" },
+        ].map(m => (
+          <div key={m.label}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+              <div>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#475569" }}>{m.label}</span>
+                <span style={{ fontSize: 11, color: "#94a3b8", marginLeft: 8 }}>{m.desc}</span>
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 800, color: m.color }}>{(m.val * 10).toFixed(1)} / 10</span>
+            </div>
+            <div style={{ height: 8, background: "#f1f5f9", borderRadius: 99 }}>
+              <div style={{ height: "100%", width: `${Math.min(m.val * 100, 100)}%`, background: m.color, borderRadius: 99 }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function UsagePage() {
   const router = useRouter();
   const [usage, setUsage] = useState(null);
+  const [evalMetrics, setEvalMetrics] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetchUsage(); }, []);
@@ -204,8 +243,11 @@ export default function UsagePage() {
       });
       const data = await res.json();
       setUsage(data);
+      
+      const evals = await getEvaluationMetrics();
+      setEvalMetrics(evals?.metrics || []);
     } catch (err) {
-      console.error("Usage fetch failed:", err);
+      console.error("Fetch failed:", err);
     } finally {
       setLoading(false);
     }
@@ -314,7 +356,9 @@ export default function UsagePage() {
 
         {/* Chart View */}
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 24, alignItems: "start" }}>
-          <UsageChart />
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+            <UsageChart />
+          </div>
 
           <div className="glass-card" style={{ background: "#fff" }}>
             <h3 style={{ fontSize: 18, fontWeight: 800, color: "#1e293b", margin: "0 0 20px 0" }}>Infrastructure Health</h3>
@@ -334,6 +378,11 @@ export default function UsagePage() {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* RAG Evaluation Dashboard */}
+        <div style={{ marginTop: 32 }}>
+          <EvaluationDashboard />
         </div>
 
       </div>
