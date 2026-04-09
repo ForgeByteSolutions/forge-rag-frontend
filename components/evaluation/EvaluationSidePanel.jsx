@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { getEvaluationMetrics, generateSyntheticData } from "@/lib/api";
+import { Target, MessageCircle, FileSearch, BarChart2, FlaskConical, Check, ThumbsUp, ThumbsDown, AlertTriangle, TrendingUp, Search } from "lucide-react";
 
 const METRICS = [
-  { key: "faithfulness",      label: "Faithfulness",       color: "#3bb978", icon: "🎯" },
-  { key: "answer_relevance",  label: "Answer Relevance",   color: "#12b8cd", icon: "💬" },
-  { key: "context_precision", label: "Context Precision",  color: "#8b5cf6", icon: "🔍" },
+  { key: "faithfulness",      label: "Faithfulness",       color: "#3bb978", icon: <Target size={14} /> },
+  { key: "answer_relevance",  label: "Answer Relevance",   color: "#12b8cd", icon: <MessageCircle size={14} /> },
+  { key: "context_precision", label: "Context Precision",  color: "#8b5cf6", icon: <FileSearch size={14} /> },
 ];
 
 function MetricBar({ label, color, icon, value }) {
@@ -153,8 +154,8 @@ export default function EvaluationSidePanel({ open, onClose, docId, workspaceId 
               width: 32, height: 32, borderRadius: 10,
               background: "linear-gradient(135deg,#12b8cd,#3bb978)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 14
-            }}>📊</div>
+              color: "#fff"
+            }}><BarChart2 size={16} strokeWidth={2.5} /></div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <h2 style={{ fontSize: 14, fontWeight: 800, color: "#1e293b", margin: 0 }}>RAG Evaluation</h2>
             <button
@@ -196,7 +197,7 @@ export default function EvaluationSidePanel({ open, onClose, docId, workspaceId 
               borderBottom: tab === t ? "2px solid #12b8cd" : "2px solid transparent",
               textTransform: "capitalize", transition: "all 0.2s"
             }}>
-              {t === "overview" ? "📈 Overview" : "🔎 Details"}
+              {t === "overview" ? <span style={{ display: "flex", alignItems: "center", gap: 6 }}><TrendingUp size={14}/> Overview</span> : <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Search size={14}/> Details</span>}
             </button>
           ))}
         </div>
@@ -224,9 +225,9 @@ export default function EvaluationSidePanel({ open, onClose, docId, workspaceId 
                 Generating testset…
               </>
             ) : genSuccess ? (
-              <> ✓ Downloaded! </>
+              <> <Check size={16} /> Downloaded! </>
             ) : (
-              <> 🧪 Generate Synthetic Testset </>
+              <> <FlaskConical size={16} /> Generate Synthetic Testset </>
             )}
           </button>
           {!docId && (
@@ -261,12 +262,12 @@ export default function EvaluationSidePanel({ open, onClose, docId, workspaceId 
                 </h3>
                 <div style={{ display: "flex", gap: 16, marginBottom: 12 }}>
                   <div style={{ flex: 1, textAlign: "center", padding: "12px 0", background: "#f0fdf4", borderRadius: 12 }}>
-                    <div style={{ fontSize: 22 }}>👍</div>
+                    <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}><ThumbsUp size={22} color="#3bb978" /></div>
                     <div style={{ fontSize: 18, fontWeight: 800, color: "#3bb978" }}>{positiveCount}</div>
                     <div style={{ fontSize: 10, color: "#64748b" }}>Positive</div>
                   </div>
                   <div style={{ flex: 1, textAlign: "center", padding: "12px 0", background: "#fef2f2", borderRadius: 12 }}>
-                    <div style={{ fontSize: 22 }}>👎</div>
+                    <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}><ThumbsDown size={22} color="#ef4444" /></div>
                     <div style={{ fontSize: 18, fontWeight: 800, color: "#ef4444" }}>{negativeCount}</div>
                     <div style={{ fontSize: 10, color: "#64748b" }}>Negative</div>
                   </div>
@@ -283,8 +284,8 @@ export default function EvaluationSidePanel({ open, onClose, docId, workspaceId 
               {/* Low Scoring Alert */}
               {lowScoring.length > 0 && (
                 <div style={{ background: "#fef2f2", borderRadius: 16, padding: 16, border: "1px solid rgba(239,68,68,0.12)" }}>
-                  <p style={{ fontSize: 12, fontWeight: 700, color: "#ef4444", marginBottom: 6 }}>
-                    ⚠️ {lowScoring.length} interaction{lowScoring.length > 1 ? "s" : ""} pulling scores down
+                  <p style={{ fontSize: 12, fontWeight: 700, color: "#ef4444", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                    <AlertTriangle size={14} /> {lowScoring.length} interaction{lowScoring.length > 1 ? "s" : ""} pulling scores down
                   </p>
                   <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>
                     Switch to <strong>Details</strong> tab to see which ones and what metrics are failing.
@@ -294,7 +295,9 @@ export default function EvaluationSidePanel({ open, onClose, docId, workspaceId 
 
               {metrics.length === 0 && (
                 <div style={{ textAlign: "center", padding: "40px 20px", background: "#fff", borderRadius: 16 }}>
-                  <div style={{ fontSize: 36, marginBottom: 10 }}>🧪</div>
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+                    <FlaskConical size={36} color="#cbd5e1" />
+                  </div>
                   <p style={{ fontSize: 14, fontWeight: 700, color: "#374151", margin: 0 }}>No evaluations yet</p>
                   <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 6 }}>
                     Chat with documents, give thumbs up/down ratings, and run evaluations to see data here.
@@ -330,8 +333,8 @@ export default function EvaluationSidePanel({ open, onClose, docId, workspaceId 
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                           <p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>Eval #{i + 1}</p>
                           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                            {m.user_feedback === "1" && <span style={{ fontSize: 12 }}>👍</span>}
-                            {m.user_feedback === "-1" && <span style={{ fontSize: 12 }}>👎</span>}
+                            {m.user_feedback === "1" && <span style={{ display: "flex" }}><ThumbsUp size={14} color="#3bb978" /></span>}
+                            {m.user_feedback === "-1" && <span style={{ display: "flex" }}><ThumbsDown size={14} color="#ef4444" /></span>}
                             {isLow && <span style={{ fontSize: 10, fontWeight: 700, color: "#ef4444", background: "#fef2f2", padding: "2px 6px", borderRadius: 99 }}>Low Score</span>}
                           </div>
                         </div>
