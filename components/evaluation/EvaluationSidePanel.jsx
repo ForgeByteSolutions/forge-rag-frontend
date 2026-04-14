@@ -1,64 +1,50 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { getEvaluationMetrics, generateSyntheticData } from "@/lib/api";
-import { Target, MessageCircle, FileSearch, BarChart2, FlaskConical, Check, ThumbsUp, ThumbsDown, AlertTriangle, TrendingUp, Search } from "lucide-react";
+import { BarChart2, TrendingUp, Search, RefreshCw, X } from "lucide-react";
+import toast from "react-hot-toast";
+import { getEvaluationMetrics, generateSyntheticData, runTestsetEvaluation } from "@/lib/api";
 
-const METRICS = [
-  { key: "faithfulness",      label: "Faithfulness",       color: "#3bb978", icon: <Target size={14} /> },
-  { key: "answer_relevance",  label: "Answer Relevance",   color: "#12b8cd", icon: <MessageCircle size={14} /> },
-  { key: "context_precision", label: "Context Precision",  color: "#8b5cf6", icon: <FileSearch size={14} /> },
-];
+import GenerateTestsetCard from "./GenerateTestsetCard";
+import RunTestsetCard      from "./RunTestsetCard";
+import OverviewTab         from "./OverviewTab";
+import DetailsTab          from "./DetailsTab";
 
-function MetricBar({ label, color, icon, value }) {
-  // value can be: a number (0-1), null (not computed), or 0 (genuinely 0)
-  const isNull = value === null || value === undefined;
-  const pct = isNull ? 0 : Math.min(value * 100, 100);
-  const score = isNull ? null : (value * 10).toFixed(1);
-  const bad = !isNull && value > 0 && value < 0.6;
-
-  return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, alignItems: "center" }}>
-        <span style={{ fontSize: 12, fontWeight: 600, color: "#475569", display: "flex", alignItems: "center", gap: 6 }}>
-          {icon} {label}
-        </span>
-        <span style={{
-          fontSize: 12, fontWeight: 800,
-          color: isNull ? "#cbd5e1" : bad ? "#ef4444" : value >= 0.8 ? color : "#f59e0b"
-        }}>
-          {isNull ? "N/A" : value > 0 ? `${score}/10` : "—"}
-        </span>
-      </div>
-      <div style={{ height: 6, background: "#f1f5f9", borderRadius: 99, overflow: "hidden" }}>
-        <div style={{
-          height: "100%",
-          width: `${pct}%`,
-          background: bad ? "#ef4444" : color,
-          borderRadius: 99,
-          transition: "width 0.8s ease"
-        }} />
-      </div>
-    </div>
-  );
-}
-
+/**
+ * EvaluationSidePanel
+ * ====================
+ * Slide-in panel showing RAG quality metrics.
+ * State + handlers live here; all rendering is delegated to sub-components.
+ */
 export default function EvaluationSidePanel({ open, onClose, docId, workspaceId }) {
-  const [metrics, setMetrics] = useState([]);
+  // ── Metrics state ─────────────────────────────────────────────────────────
+  const [metrics,  setMetrics]  = useState([]);
   const [feedback, setFeedback] = useState({ positive: 0, negative: 0, total: 0 });
-  const [loading, setLoading] = useState(false);
+  const [loading,  setLoading]  = useState(false);
+  const [tab,      setTab]      = useState("overview");
+
+  // ── Generate testset state ────────────────────────────────────────────────
   const [generating, setGenerating] = useState(false);
-  const [tab, setTab] = useState("overview");
   const [genSuccess, setGenSuccess] = useState(false);
 
+  // ── Run testset state ─────────────────────────────────────────────────────
+  const [testsetFile,     setTestsetFile]     = useState(null);
+  const [testsetRunning,  setTestsetRunning]  = useState(false);
+  const [testsetProgress, setTestsetProgress] = useState(null);
+  const [testsetDone,     setTestsetDone]     = useState(false);
+
+  // ── Data fetching ─────────────────────────────────────────────────────────
   const fetchMetrics = useCallback(async () => {
     setLoading(true);
     try {
       const data = await getEvaluationMetrics({ doc_id: docId, workspace_id: workspaceId });
-      setMetrics(data?.metrics || []);
+      const m = data?.metrics || [];
+      setMetrics(m);
       setFeedback(data?.feedback || { positive: 0, negative: 0, total: 0 });
+      return m.length;   // ← callers can use this to detect completion
     } catch (err) {
       console.error(err);
+      return 0;
     } finally {
       setLoading(false);
     }
@@ -68,14 +54,14 @@ export default function EvaluationSidePanel({ open, onClose, docId, workspaceId 
     if (open) {
       setTab("overview");
       fetchMetrics();
-      // Auto-refresh every 10s while panel is open to pick up background eval results
       const timer = setInterval(fetchMetrics, 10000);
       return () => clearInterval(timer);
     }
   }, [open, docId, workspaceId, fetchMetrics]);
 
+  // ── Handlers ──────────────────────────────────────────────────────────────
   const handleGenerateSynthetic = async () => {
-    if (!docId) return alert("Please select a single document first.");
+    if (!docId) return toast.error("Please select a single document first.");
     setGenerating(true);
     try {
       const data = await generateSyntheticData(docId, 5);
@@ -89,276 +75,157 @@ export default function EvaluationSidePanel({ open, onClose, docId, workspaceId 
       setGenSuccess(true);
       setTimeout(() => setGenSuccess(false), 3000);
     } catch {
-      alert("Failed to generate testset. Document needs at least 100 words.");
+      toast.error("Failed to generate testset. Document needs at least 100 words.");
     } finally {
       setGenerating(false);
     }
   };
 
-  // Compute averages skipping nulls (null = metric not computed, not a 0 score)
+  const handleRunTestset = async () => {
+    if (!testsetFile) return;
+    try {
+      const raw  = JSON.parse(await testsetFile.text());
+      const rows = Array.isArray(raw) ? raw : (raw.data ?? []);
+      if (!rows.length) {
+        toast.error('testset.json has no rows. Expected a "data" array or a root array.');
+        return;
+      }
+
+      // Snapshot current count so we know when all new rows have landed
+      const preCount = await fetchMetrics();
+
+      setTestsetRunning(true);
+      setTestsetDone(false);
+      setTestsetProgress({ total: rows.length });
+      await runTestsetEvaluation({ doc_id: docId, workspace_id: workspaceId, rows });
+
+      // Poll every 5s; stop as soon as new count ≥ preCount + rows.length
+      let polls = 0;
+      const maxPolls = 120; // 10 min hard cap
+      const pollId = setInterval(async () => {
+        polls++;
+        const newCount = await fetchMetrics();
+        const finished = newCount >= preCount + rows.length;
+        if (finished || polls >= maxPolls) {
+          clearInterval(pollId);
+          setTestsetRunning(false);
+          setTestsetDone(true);
+          setTimeout(() => setTestsetDone(false), 4000);
+        }
+      }, 5000);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to submit testset: " + (err?.response?.data?.detail ?? err.message));
+      setTestsetRunning(false);
+    }
+  };
+
+  // ── Derived values ────────────────────────────────────────────────────────
   function avg(key) {
     const vals = metrics.map(m => m[key]).filter(v => v !== null && v !== undefined);
     return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
   }
+  const avgValues = {
+    faithfulness:      avg("faithfulness"),
+    answer_relevance:  avg("answer_relevance"),
+    context_precision: avg("context_precision"),
+  };
 
-  const avgFaithfulness = avg("faithfulness");
-  const avgRelevance    = avg("answer_relevance");
-  const avgPrecision    = avg("context_precision");
-  const positiveCount   = feedback.positive;
-  const negativeCount   = feedback.negative;
-
-  const lowScoring = metrics.filter(m =>
-    (m.faithfulness !== null && m.faithfulness < 0.6) ||
-    (m.answer_relevance !== null && m.answer_relevance < 0.6) ||
-    (m.context_precision !== null && m.context_precision < 0.6)
-  );
-
-  const avgValues = { faithfulness: avgFaithfulness, answer_relevance: avgRelevance, context_precision: avgPrecision };
-
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <>
       {/* Backdrop */}
       <div
         onClick={onClose}
-        style={{
-          position: "fixed", inset: 0, zIndex: 49,
-          background: "rgba(15,23,42,0.3)",
-          backdropFilter: "blur(2px)",
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? "auto" : "none",
-          transition: "opacity 0.3s ease",
-        }}
+        className={`fixed inset-0 z-[49] bg-slate-900/30 backdrop-blur-sm transition-opacity duration-300 ${
+          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
       />
 
       {/* Panel */}
-      <div style={{
-        position: "fixed", top: 0, right: 0, bottom: 0, width: 420,
-        background: "#f8fafc",
-        boxShadow: "-16px 0 60px rgba(0,0,0,0.1)",
-        zIndex: 50,
-        transform: open ? "translateX(0)" : "translateX(100%)",
-        transition: "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
-        display: "flex", flexDirection: "column",
-        borderLeft: "1px solid rgba(0,0,0,0.06)",
-      }}>
+      <div className={`fixed top-0 right-0 bottom-0 w-[420px] bg-slate-50 z-50 flex flex-col border-l border-black/[0.06] shadow-[-16px_0_60px_rgba(0,0,0,0.1)] transition-transform duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        open ? "translate-x-0" : "translate-x-full"
+      }`}>
 
         {/* Header */}
-        <div style={{
-          height: 64, background: "#fff",
-          borderBottom: "1px solid rgba(0,0,0,0.06)",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 20px", flexShrink: 0
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 10,
-              background: "linear-gradient(135deg,#12b8cd,#3bb978)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              color: "#fff"
-            }}><BarChart2 size={16} strokeWidth={2.5} /></div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <h2 style={{ fontSize: 14, fontWeight: 800, color: "#1e293b", margin: 0 }}>RAG Evaluation</h2>
+        <div className="h-16 bg-white border-b border-black/[0.06] flex items-center justify-between px-5 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-[10px] bg-gradient-to-br from-cyan-400 to-emerald-400 flex items-center justify-center text-white">
+              <BarChart2 size={16} strokeWidth={2.5} />
+            </div>
+            <h2 className="text-sm font-black text-slate-800 leading-tight">RAG Evaluation</h2>
+          </div>
+          <div className="flex items-center gap-2">
             <button
               onClick={fetchMetrics}
               disabled={loading}
               title="Refresh metrics"
-              style={{
-                background: "#f1f5f9", border: "none", cursor: loading ? "not-allowed" : "pointer",
-                padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700, color: "#64748b",
-                display: "flex", alignItems: "center", gap: 4,
-              }}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 text-[11px] font-bold hover:bg-slate-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "…" : "↻ Refresh"}
+              <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
+              {loading ? "…" : "Refresh"}
+            </button>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors"
+            >
+              <X size={16} />
             </button>
           </div>
-          <p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>
-            {docId ? "Document view" : workspaceId ? "Workspace view" : "Global"}
-          </p>
-          </div>
-          <button onClick={onClose} style={{
-            background: "#f1f5f9", border: "none", cursor: "pointer",
-            width: 32, height: 32, borderRadius: 8,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "#64748b", fontSize: 18, lineHeight: 1
-          }}>×</button>
         </div>
 
         {/* Tabs */}
-        <div style={{
-          display: "flex", background: "#fff",
-          borderBottom: "1px solid rgba(0,0,0,0.06)", padding: "0 20px", gap: 0, flexShrink: 0
-        }}>
+        <div className="flex bg-white border-b border-black/[0.06] px-5 shrink-0">
           {["overview", "details"].map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{
-              padding: "12px 16px", borderRadius: 0, border: "none",
-              background: "transparent", cursor: "pointer",
-              fontSize: 12, fontWeight: 700,
-              color: tab === t ? "#12b8cd" : "#94a3b8",
-              borderBottom: tab === t ? "2px solid #12b8cd" : "2px solid transparent",
-              textTransform: "capitalize", transition: "all 0.2s"
-            }}>
-              {t === "overview" ? <span style={{ display: "flex", alignItems: "center", gap: 6 }}><TrendingUp size={14}/> Overview</span> : <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Search size={14}/> Details</span>}
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`flex items-center gap-1.5 px-4 py-3 text-xs font-bold transition-all border-b-2 ${
+                tab === t
+                  ? "text-cyan-500 border-cyan-500"
+                  : "text-slate-400 border-transparent hover:text-slate-600"
+              }`}
+            >
+              {t === "overview"
+                ? <><TrendingUp size={13} /> Overview</>
+                : <><Search size={13} /> Details</>}
             </button>
           ))}
         </div>
 
-        {/* Scrollable Body */}
-        <div style={{ flex: 1, overflowY: "auto", padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4">
 
-          {/* Generate Button */}
-          <button
-            onClick={handleGenerateSynthetic}
-            disabled={generating || !docId}
-            style={{
-              width: "100%", padding: "12px 20px", borderRadius: 14,
-              background: genSuccess ? "#3bb978" : docId ? "linear-gradient(135deg,#12b8cd,#0ea5c6)" : "#e2e8f0",
-              color: docId ? "#fff" : "#94a3b8",
-              border: "none", fontWeight: 700, fontSize: 13, cursor: docId ? "pointer" : "not-allowed",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              boxShadow: docId ? "0 4px 16px rgba(18,184,205,0.25)" : "none",
-              transition: "all 0.3s"
-            }}
-          >
-            {generating ? (
-              <>
-                <div style={{ width: 14, height: 14, border: "2px solid #fff", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                Generating testset…
-              </>
-            ) : genSuccess ? (
-              <> <Check size={16} /> Downloaded! </>
-            ) : (
-              <> <FlaskConical size={16} /> Generate Synthetic Testset </>
-            )}
-          </button>
-          {!docId && (
-            <p style={{ fontSize: 11, color: "#94a3b8", textAlign: "center", marginTop: -8 }}>
-              Select a single document to generate a testset
-            </p>
-          )}
+          {/* Testset tools — always visible regardless of tab */}
+          <GenerateTestsetCard
+            docId={docId}
+            generating={generating}
+            genSuccess={genSuccess}
+            onGenerate={handleGenerateSynthetic}
+          />
+          <RunTestsetCard
+            testsetFile={testsetFile}
+            testsetRunning={testsetRunning}
+            testsetDone={testsetDone}
+            testsetProgress={testsetProgress}
+            onFileChange={setTestsetFile}
+            onClearFile={() => setTestsetFile(null)}
+            onRun={handleRunTestset}
+          />
 
+          {/* Tab content */}
           {loading ? (
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 40 }}>
-              <div style={{ width: 32, height: 32, borderRadius: "50%", border: "3px solid #e2e8f0", borderTopColor: "#12b8cd", animation: "spin 0.8s linear infinite", marginBottom: 12 }} />
-              <p style={{ fontSize: 13, color: "#94a3b8" }}>Loading metrics…</p>
+            <div className="flex-1 flex flex-col items-center justify-center pt-10">
+              <div className="w-8 h-8 rounded-full border-[3px] border-slate-200 border-t-cyan-500 animate-spin mb-3" />
+              <p className="text-sm text-slate-400">Loading metrics…</p>
             </div>
           ) : tab === "overview" ? (
-            <>
-              {/* Aggregate Scores */}
-              <div style={{ background: "#fff", borderRadius: 16, padding: 20, border: "1px solid rgba(0,0,0,0.05)", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
-                <h3 style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 16 }}>
-                  Performance Snapshot • {metrics.length} evals
-                </h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                  {METRICS.map(m => (
-                    <MetricBar key={m.key} label={m.label} color={m.color} icon={m.icon} value={avgValues[m.key]} />
-                  ))}
-                </div>
-              </div>
-
-              {/* User Sentiment */}
-              <div style={{ background: "#fff", borderRadius: 16, padding: 20, border: "1px solid rgba(0,0,0,0.05)" }}>
-                <h3 style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 14 }}>
-                  User Feedback
-                </h3>
-                <div style={{ display: "flex", gap: 16, marginBottom: 12 }}>
-                  <div style={{ flex: 1, textAlign: "center", padding: "12px 0", background: "#f0fdf4", borderRadius: 12 }}>
-                    <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}><ThumbsUp size={22} color="#3bb978" /></div>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: "#3bb978" }}>{positiveCount}</div>
-                    <div style={{ fontSize: 10, color: "#64748b" }}>Positive</div>
-                  </div>
-                  <div style={{ flex: 1, textAlign: "center", padding: "12px 0", background: "#fef2f2", borderRadius: 12 }}>
-                    <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}><ThumbsDown size={22} color="#ef4444" /></div>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: "#ef4444" }}>{negativeCount}</div>
-                    <div style={{ fontSize: 10, color: "#64748b" }}>Negative</div>
-                  </div>
-                </div>
-                {feedback.total > 0 && (
-                  <div style={{ height: 6, background: "#f1f5f9", borderRadius: 99, overflow: "hidden", display: "flex" }}>
-                    <div style={{ width: `${Math.round(positiveCount / feedback.total * 100)}%`, background: "#3bb978", transition: "width 0.8s ease" }} />
-                    <div style={{ flex: 1, background: "#fca5a5" }} />
-                  </div>
-                )}
-                <p style={{ fontSize: 11, color: "#94a3b8", marginTop: 6 }}>{feedback.total} total ratings</p>
-              </div>
-
-              {/* Low Scoring Alert */}
-              {lowScoring.length > 0 && (
-                <div style={{ background: "#fef2f2", borderRadius: 16, padding: 16, border: "1px solid rgba(239,68,68,0.12)" }}>
-                  <p style={{ fontSize: 12, fontWeight: 700, color: "#ef4444", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
-                    <AlertTriangle size={14} /> {lowScoring.length} interaction{lowScoring.length > 1 ? "s" : ""} pulling scores down
-                  </p>
-                  <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>
-                    Switch to <strong>Details</strong> tab to see which ones and what metrics are failing.
-                  </p>
-                </div>
-              )}
-
-              {metrics.length === 0 && (
-                <div style={{ textAlign: "center", padding: "40px 20px", background: "#fff", borderRadius: 16 }}>
-                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
-                    <FlaskConical size={36} color="#cbd5e1" />
-                  </div>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: "#374151", margin: 0 }}>No evaluations yet</p>
-                  <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 6 }}>
-                    Chat with documents, give thumbs up/down ratings, and run evaluations to see data here.
-                  </p>
-                </div>
-              )}
-            </>
+            <OverviewTab metrics={metrics} feedback={feedback} avgValues={avgValues} />
           ) : (
-            /* Details Tab */
-            <>
-              <h3 style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                All Evaluations ({metrics.length})
-              </h3>
-              {metrics.length === 0 ? (
-                <div style={{ textAlign: "center", padding: 40 }}>
-                  <p style={{ fontSize: 13, color: "#94a3b8" }}>No evaluation records yet.</p>
-                </div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {metrics.map((m, i) => {
-                    const worstMetric = METRICS.reduce((worst, metric) => {
-                      const val = m[metric.key] || 0;
-                      return val < (m[worst?.key] || 1) ? metric : worst;
-                    }, METRICS[0]);
-                    const isLow = METRICS.some(metric => (m[metric.key] || 0) < 0.6);
-
-                    return (
-                      <div key={i} style={{
-                        background: "#fff", borderRadius: 12, padding: "14px 16px",
-                        border: isLow ? "1px solid rgba(239,68,68,0.15)" : "1px solid rgba(0,0,0,0.05)",
-                        boxShadow: "0 1px 4px rgba(0,0,0,0.03)"
-                      }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                          <p style={{ fontSize: 11, color: "#94a3b8", margin: 0 }}>Eval #{i + 1}</p>
-                          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                            {m.user_feedback === "1" && <span style={{ display: "flex" }}><ThumbsUp size={14} color="#3bb978" /></span>}
-                            {m.user_feedback === "-1" && <span style={{ display: "flex" }}><ThumbsDown size={14} color="#ef4444" /></span>}
-                            {isLow && <span style={{ fontSize: 10, fontWeight: 700, color: "#ef4444", background: "#fef2f2", padding: "2px 6px", borderRadius: 99 }}>Low Score</span>}
-                          </div>
-                        </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                          {METRICS.map(metric => (
-                            <MetricBar
-                              key={metric.key}
-                              label={metric.label}
-                              color={metric.color}
-                              icon={metric.icon}
-                              value={m[metric.key] || 0}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </>
+            <DetailsTab metrics={metrics} />
           )}
-        </div>
 
-        <style>{`@keyframes spin { to { transform: rotate(360deg); }}`}</style>
+        </div>
       </div>
     </>
   );

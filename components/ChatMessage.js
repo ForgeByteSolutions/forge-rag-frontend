@@ -102,7 +102,7 @@ export default function ChatMessage({ message, onViewCitation, themed, onFeedbac
                                     <button
                                         onClick={handleEval}
                                         disabled={evalLoading || evalDone || !isRealId}
-                                        title={!isRealId ? "Waiting for message to be saved..." : "Run RAG evaluation on this response"}
+                                        title={!isRealId ? "Waiting for message to be saved..." : evalDone ? "Evaluation queued — results appear in the Evals panel" : "Run RAG evaluation on this response"}
                                         style={{
                                             background: evalDone ? "#f0fdf4" : "transparent",
                                             border: evalDone ? "1px solid #86efac" : "1px solid rgba(0,0,0,0.08)",
@@ -118,7 +118,7 @@ export default function ChatMessage({ message, onViewCitation, themed, onFeedbac
                                         {evalLoading ? (
                                             <div style={{ width: 10, height: 10, border: "1.5px solid #94a3b8", borderTopColor: "transparent", borderRadius: "50%", animation: "wsp-spin 0.8s linear infinite" }} />
                                         ) : evalDone ? (
-                                            <> ✓ Evaluated </>
+                                            <> ✓ Queued </>
                                         ) : (
                                             <> ⚡ Eval </>
                                         )}
