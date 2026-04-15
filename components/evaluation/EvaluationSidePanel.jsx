@@ -99,18 +99,37 @@ export default function EvaluationSidePanel({ open, onClose, docId, workspaceId 
       setTestsetProgress({ total: rows.length });
       await runTestsetEvaluation({ doc_id: docId, workspace_id: workspaceId, rows });
 
-      // Poll every 5s; stop as soon as new count ≥ preCount + rows.length
+      // Poll every 5s; stop as soon as new count >= expected, OR if stuck for 30s
       let polls = 0;
+      let noChangePolls = 0;
+      let lastCount = preCount;
       const maxPolls = 120; // 10 min hard cap
+
       const pollId = setInterval(async () => {
         polls++;
         const newCount = await fetchMetrics();
+        
+        if (newCount > lastCount) {
+          lastCount = newCount;
+          noChangePolls = 0; // reset stale counter
+        } else {
+          noChangePolls++;
+        }
+
         const finished = newCount >= preCount + rows.length;
-        if (finished || polls >= maxPolls) {
+        
+        // Break if we got all rows, hit the hard cap, or stalled completely due to backend failures
+        if (finished || polls >= maxPolls || noChangePolls >= 6) {
           clearInterval(pollId);
           setTestsetRunning(false);
           setTestsetDone(true);
           setTimeout(() => setTestsetDone(false), 4000);
+          
+          if (!finished && newCount > preCount) {
+             toast.error(`Partial completion: ${newCount - preCount} rows evaluated. Some failed.`, { duration: 5000 });
+          } else if (!finished && newCount === preCount) {
+             toast.error("Testset evaluation failed entirely.");
+          }
         }
       }, 5000);
     } catch (err) {
