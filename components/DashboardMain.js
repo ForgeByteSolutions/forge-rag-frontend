@@ -15,6 +15,7 @@ import DocumentViewer from "@/components/dashboard/DocumentViewer";
 import ContractChoiceScreen from "@/components/dashboard/ContractChoiceScreen";
 import RiskDashboardModal from "@/components/dashboard/RiskDashboardModal";
 import OcrEngineModal from "@/components/dashboard/OcrEngineModal";
+import OcrHome from "@/components/ocr/OcrHome";
 
 import { useDocumentSync } from "@/hooks/useDocumentSync";
 import { useUploadDocument } from "@/hooks/useUploadDocument";
@@ -34,6 +35,7 @@ export default function DashboardMain() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [creatingWorkspace, setCreatingWorkspace] = useState(false);
     const [isAuthChecking, setIsAuthChecking] = useState(true);
+    const [activeSidebarTab, setActiveSidebarTab] = useState("documents");
 
     // Hooks
     const [selectedDoc, setSelectedDoc] = useDocumentSync(params, router);
@@ -103,6 +105,7 @@ export default function DashboardMain() {
                         onUploadSuccess={() => setRefreshSidebar(prev => prev + 1)}
                         onUpload={handleFileUpload}
                         uploading={uploading}
+                        onTabChange={setActiveSidebarTab}
                     />
                 </div>
             </div>
@@ -111,7 +114,7 @@ export default function DashboardMain() {
             <div className="flex-1 flex overflow-hidden">
 
                 {/* Top-right action buttons (dashboard home only) */}
-                {!selectedDoc && (
+                {!selectedDoc && activeSidebarTab !== "ocr" && (
                     <div style={{ position: "fixed", top: 12, right: 16, zIndex: 60, display: "flex", alignItems: "center", gap: 8 }}>
                         <button
                             onClick={handleOpenRiskDashboard}
@@ -201,6 +204,10 @@ export default function DashboardMain() {
                                 isCitationActive={!!activeCitation}
                             />
                         )
+                    ) : activeSidebarTab === "ocr" ? (
+                        <OcrHome
+                            sidebarOpen={sidebarOpen}
+                        />
                     ) : (
                         <DashboardHome
                             onUpload={handleFileUpload}
