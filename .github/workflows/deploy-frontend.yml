@@ -4,8 +4,7 @@ on:
   push:
     branches:
       - main          # triggers on every push to main
-    paths:
-      - 'frontend/**' # only runs when frontend files change
+    # No paths filter — repo root IS the frontend, all changes should trigger deploy
   workflow_dispatch:  # allows manual trigger from GitHub Actions UI
 
 jobs:
@@ -24,21 +23,19 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: package-lock.json  # repo root = frontend root
 
       # ── 3. Install dependencies ───────────────────────────────────────────────
       - name: Install dependencies
-        working-directory: frontend
         run: npm ci
 
       # ── 4. Build Next.js static export ────────────────────────────────────────
       # NEXT_PUBLIC_API_BASE is injected at build time from GitHub Secrets
       - name: Build Next.js app
-        working-directory: frontend
         env:
           NEXT_PUBLIC_API_BASE: ${{ secrets.NEXT_PUBLIC_API_BASE }}
         run: npm run build
-        # This produces the `out/` folder (static HTML/CSS/JS)
+        # Produces the `out/` folder (static HTML/CSS/JS)
 
       # ── 5. Configure AWS credentials ──────────────────────────────────────────
       - name: Configure AWS credentials
@@ -51,13 +48,14 @@ jobs:
       # ── 6. Sync build output to S3 ────────────────────────────────────────────
       - name: Deploy to S3
         run: |
-          aws s3 sync frontend/out/ s3://${{ secrets.S3_BUCKET_NAME }}/ \
+          # Static assets — cache forever (filenames are hashed by Next.js)
+          aws s3 sync out/ s3://${{ secrets.S3_BUCKET_NAME }}/ \
             --delete \
             --cache-control "public, max-age=31536000, immutable" \
             --exclude "*.html"
 
-          # HTML files: no cache (so users always get fresh pages)
-          aws s3 sync frontend/out/ s3://${{ secrets.S3_BUCKET_NAME }}/ \
+          # HTML files — no cache so users always get the latest page
+          aws s3 sync out/ s3://${{ secrets.S3_BUCKET_NAME }}/ \
             --delete \
             --cache-control "no-cache, no-store, must-revalidate" \
             --include "*.html"
@@ -68,7 +66,6 @@ jobs:
           aws cloudfront create-invalidation \
             --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/*"
-
 
       # ── 8. Summary ────────────────────────────────────────────────────────────
       - name: Deployment summary
