@@ -3,7 +3,7 @@ name: Deploy Frontend to S3
 on:
   push:
     branches:
-      - main          # triggers on every push to main
+      - main          
     paths:
       - 'frontend/**' # only runs when frontend files change
   workflow_dispatch:  # allows manual trigger from GitHub Actions UI
