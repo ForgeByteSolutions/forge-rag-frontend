@@ -62,14 +62,13 @@ jobs:
             --cache-control "no-cache, no-store, must-revalidate" \
             --include "*.html"
 
-      # ── 7. Invalidate CloudFront cache (if you have CloudFront) ───────────────
-      # Remove this step if you don't use CloudFront
+      # ── 7. Invalidate CloudFront cache ────────────────────────────────────────
       - name: Invalidate CloudFront cache
-        if: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID != '' }}
         run: |
           aws cloudfront create-invalidation \
             --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/*"
+
 
       # ── 8. Summary ────────────────────────────────────────────────────────────
       - name: Deployment summary
