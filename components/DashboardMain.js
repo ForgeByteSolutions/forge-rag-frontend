@@ -26,7 +26,6 @@ const SIDEBAR_WIDTH = 250;
 
 export default function DashboardMain() {
     const router = useRouter();
-    const params = useParams();
     const searchParams = useSearchParams();
 
     const [refreshSidebar, setRefreshSidebar] = useState(0);
@@ -37,7 +36,7 @@ export default function DashboardMain() {
     const [mounted, setMounted] = useState(false);
 
     // Hooks
-    const [selectedDoc, setSelectedDoc] = useDocumentSync(params, router);
+    const [selectedDoc, setSelectedDoc] = useDocumentSync(router);
 
     const { executeUpload, handleFileUpload, uploading, pendingFile, setPendingFile } = useUploadDocument({
         onSuccess: () => setRefreshSidebar(prev => prev + 1),
@@ -63,7 +62,7 @@ export default function DashboardMain() {
     }, [selectedDoc]);
 
     const handleSelectDoc = (doc) => {
-        if (doc) router.push(`/dashboard/${doc.id}`);
+        if (doc) router.push(`/dashboard?doc=${doc.id}`);
         else router.push("/dashboard");
         setActiveCitation(null);
     };
@@ -72,7 +71,7 @@ export default function DashboardMain() {
         try {
             setCreatingWorkspace(true);
             const ws = await createWorkspace(name);
-            router.push(`/workspace/${ws.id}`);
+            router.push(`/workspace?id=${ws.id}`);
         } catch (err) {
             console.error("Create workspace failed:", err);
             alert("❌ Failed to create workspace.");
@@ -178,7 +177,7 @@ export default function DashboardMain() {
                                         <span className="text-xs text-gray-400 truncate max-w-xs">{selectedDoc.filename}</span>
                                     </div>
                                     <button
-                                        onClick={() => router.push(`/dashboard/${selectedDoc.id}`)}
+                                        onClick={() => router.push(`/dashboard?doc=${selectedDoc.id}`)}
                                         className="text-sm text-[#12b8cd] font-semibold hover:underline"
                                     >
                                         Switch to Chat →
@@ -200,7 +199,7 @@ export default function DashboardMain() {
                                 selectedDocId={selectedDoc?.id || null}
                                 selectedDocName={selectedDoc?.filename || null}
                                 onViewCitation={setActiveCitation}
-                                onSwitchToRisk={() => router.push(`/dashboard/${selectedDoc.id}?tab=risk`)}
+                                onSwitchToRisk={() => router.push(`/dashboard?doc=${selectedDoc.id}&tab=risk`)}
                                 isCitationActive={!!activeCitation}
                             />
                         )

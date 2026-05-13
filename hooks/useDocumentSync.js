@@ -1,17 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { getDocuments } from "@/lib/api";
 
 /**
- * Syncs the selected document from URL params.
+ * Syncs the selected document from URL query param (?doc=<id>).
  * Returns [selectedDoc, setSelectedDoc]
  */
-export function useDocumentSync(params, router) {
+export function useDocumentSync(router) {
+    const searchParams = useSearchParams();
     const [selectedDoc, setSelectedDoc] = useState(null);
 
+    // Use query param (?doc=)
+    const docIdFromUrl = searchParams?.get("doc");
+
     useEffect(() => {
-        const docIdFromUrl = params?.docId;
         if (docIdFromUrl) {
             getDocuments()
                 .then(docs => {
@@ -23,7 +27,7 @@ export function useDocumentSync(params, router) {
         } else {
             setSelectedDoc(null);
         }
-    }, [params?.docId]);
+    }, [docIdFromUrl]);
 
     return [selectedDoc, setSelectedDoc];
 }

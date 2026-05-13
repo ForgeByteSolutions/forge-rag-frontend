@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Syne, DM_Sans } from "next/font/google";
 
 // Components
@@ -26,8 +26,8 @@ const syne = Syne({ subsets: ["latin"], weight: ["600", "700", "800"], display: 
 const dmSans = DM_Sans({ subsets: ["latin"], weight: ["300", "400", "500", "700"], display: "swap", variable: "--font-dm" });
 
 export default function WorkspacePage() {
-    const params = useParams();
-    const workspaceId = params?.workspaceId;
+    const searchParams = useSearchParams();
+    const workspaceId = searchParams?.get("id");
 
     // — Workspace metadata —
     const { workspaceName } = useWorkspace(workspaceId);

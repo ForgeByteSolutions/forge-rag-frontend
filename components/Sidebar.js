@@ -93,7 +93,7 @@ export default function Sidebar({ selectedDocId, onSelectDoc, refreshKey, onUplo
             await deleteWorkspace(wsId);
             
             // Redirect to dashboard if the user is currently viewing the deleted workspace
-            if (typeof window !== "undefined" && window.location.pathname.includes(`/workspace/${wsId}`)) {
+            if (typeof window !== "undefined" && window.location.search.includes(`id=${wsId}`)) {
                 router.push("/");
             }
             
@@ -114,7 +114,7 @@ export default function Sidebar({ selectedDocId, onSelectDoc, refreshKey, onUplo
         try {
             const ws = await createWorkspace(name);
             setShowCreateWsModal(false);
-            router.push(`/workspace/${ws.id}`);
+            router.push(`/workspace?id=${ws.id}`);
             
             // Refresh workspace list
             const updatedWs = await getWorkspaces();
@@ -228,7 +228,7 @@ export default function Sidebar({ selectedDocId, onSelectDoc, refreshKey, onUplo
                                 <div
                                     key={ws.id}
                                     className="sb-ws-item group flex justify-between items-center cursor-pointer relative"
-                                    onClick={() => router.push(`/workspace/${ws.id}`)}
+                                    onClick={() => router.push(`/workspace?id=${ws.id}`)}
                                 >
                                     <div className="flex items-center gap-3 min-w-0" style={{ maxWidth: '85%' }}>
                                         <div className="sb-ws-icon flex-shrink-0">
