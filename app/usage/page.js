@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getToken } from "@/lib/auth";
+import { getUsage } from "@/lib/api";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { BrainCircuit, FileText, Database, Puzzle, Search } from "lucide-react";
 import EvaluationDashboard from "@/components/evaluation/EvaluationDashboard";
@@ -238,12 +239,9 @@ export default function UsagePage() {
 
   const fetchUsage = async () => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/usage`, {
-        headers: { Authorization: `Bearer ${await getToken()}` }
-      });
-      const data = await res.json();
+      const data = await getUsage();   // uses axios + correct /usage/ URL + auth interceptor
       setUsage(data);
-      
+
       const evals = await getEvaluationMetrics();
       setEvalMetrics(evals?.metrics || []);
     } catch (err) {

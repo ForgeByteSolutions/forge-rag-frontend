@@ -34,6 +34,7 @@ export default function DashboardMain() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [creatingWorkspace, setCreatingWorkspace] = useState(false);
     const [isAuthChecking, setIsAuthChecking] = useState(true);
+    const [mounted, setMounted] = useState(false);
 
     // Hooks
     const [selectedDoc, setSelectedDoc] = useDocumentSync(params, router);
@@ -50,7 +51,9 @@ export default function DashboardMain() {
         handleOpenRiskDashboard,
     } = useRiskAnalysis(searchParams, selectedDoc);
 
+    // Run auth check only on the client (after hydration) so localStorage is always available.
     useEffect(() => {
+        setMounted(true);
         if (!isLoggedIn()) router.push("/login");
         else setIsAuthChecking(false);
     }, [router]);
@@ -80,7 +83,7 @@ export default function DashboardMain() {
 
     const tab = searchParams?.get("tab");
 
-    if (isAuthChecking) return null;
+    if (!mounted || isAuthChecking) return null;
 
     return (
         <div className={`flex h-screen w-screen overflow-hidden bg-white relative`}>
