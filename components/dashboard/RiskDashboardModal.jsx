@@ -145,7 +145,7 @@ export default function RiskDashboardModal({ open, onClose, data, loading, route
                                         <button
                                             onClick={() => {
                                                 onClose();
-                                                router.push(`/dashboard/${risk.doc_id}?tab=risk`);
+                                                router.push(`/dashboard?doc=${risk.doc_id}&tab=risk`);
                                             }}
                                             style={{
                                                 background: '#1e293b', color: '#fff', border: 'none', borderRadius: 10,

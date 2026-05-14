@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Syne, DM_Sans } from "next/font/google";
 import "@/styles/workspace.css";
 
@@ -15,12 +16,12 @@ export default function WorkspaceHeader({ workspaceName, docCount, onFilePick })
             zIndex: 10,
         }}>
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <a href="/dashboard" className="wsp-btn-outline" style={{ textDecoration: "none" }}>
+                <Link href="/dashboard" className="wsp-btn-outline" style={{ textDecoration: "none" }}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="15 18 9 12 15 6" />
                     </svg>
                     Dashboard
-                </a>
+                </Link>
                 <div>
                     <h1 className={`${syne.variable} wsp-syne`} style={{ fontSize: 18, fontWeight: 700, color: "#111827", lineHeight: 1.2 }}>
                         {workspaceName}

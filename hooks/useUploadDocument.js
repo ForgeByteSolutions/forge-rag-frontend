@@ -37,9 +37,9 @@ export function useUploadDocument({ onSuccess, router }) {
 
             if (onSuccess) onSuccess();
             if (data.is_contract) {
-                router.push(`/dashboard/${newDocId}?tab=choice`);
+                router.push(`/dashboard?doc=${newDocId}&tab=choice`);
             } else {
-                router.push(`/dashboard/${newDocId}`);
+                router.push(`/dashboard?doc=${newDocId}`);
             }
         } catch (err) {
             console.error(err);
@@ -53,6 +53,9 @@ export function useUploadDocument({ onSuccess, router }) {
         const file = e.target.files[0];
         if (!file) return;
         
+        // Immediately navigate to the dashboard home so the inline loader is visible
+        router.push("/dashboard");
+
         if (file.size > 50 * 1024 * 1024) {
             alert("❌ File too large. Max 50MB allowed.");
             return;
